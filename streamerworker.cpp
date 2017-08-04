@@ -41,6 +41,11 @@ void StreamerWorker::stopStreaming()
 {
     streaming = false;
     wait();
+    HRESULT hr = mfInstance->DeviceSet(eMFDT_Video, mfDeviceIndex, CComBSTR(L""));
+    if (FAILED(hr)) {
+        qCritical() << Q_FUNC_INFO << "DeviceSet FAILED";
+        return;
+    }
     mfInstance->DeviceClose();
 }
 
