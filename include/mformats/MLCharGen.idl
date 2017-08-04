@@ -1,0 +1,155 @@
+//////////////////////////////////////////////////////////////////////////
+// MLCharGen.idl : IDL source for MLCharGen.dll
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (MLCharGen.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+import "OCIdl.idl"; // For IProvideClassInfo 
+
+
+#include "MLCharGenBase.idl"
+#include "MLXMLPersist.idl"
+
+[
+	uuid(A792045E-B55C-473B-8C61-861E93A1D370),
+	version(1.0),
+	helpstring("MLCharGen 1.0 Type Library")
+]
+library MLCHARGENLib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	// Notification interface 
+	[
+		uuid(19E97A90-BB5A-4446-897A-6A6177AF963E),
+		helpstring("IMLCharGenEvents Interface")
+	]
+	dispinterface IMLCharGenEvents
+	{
+		properties:
+		methods:
+		// Called for each input sample (frame), BEFORE items will be overlayed.
+		// Note: This method is SYNC, thus the video stream blocked until this method return	
+		[id(1), helpstring("Called for each input sample (frame), BEFORE items will be overlayed. Note: This method is SYNC, thus the video stream blocked until this method return	")] 
+		HRESULT OnFrame(
+						//Sample time
+						[in] double dblTime, 
+						//Sample mediatime, -1 if mediatime not set 
+						[in] int nMediaTime, 
+						//Number of input frame
+						[in] int nFrameNum );
+
+		// Called when flash item reach the end
+		// bsItemID - Item cookie
+		[id(2), helpstring("Called when flash item or image sequence reach the end")] 
+		HRESULT OnEndOfClip(
+							//Item ID - unique string, identifying the flash object
+							[in] BSTR bsItemID );
+
+		// Called when transition done (e.g. Fade In or change position)	
+		[id(3), helpstring("Called when transition done (e.g. Fade In or change position)")] 
+		HRESULT OnTransitionDone(
+								//Item ID - unique string, identifying the flash object
+								[in] BSTR bsItemID, 
+								//Item displayed flag
+								[in] VARIANT_BOOL bShow );
+
+		// Calls external method from Action Script.
+		// Call of ExternalInterface.call(methodName:String, [parameter:Object])
+		// should be used.
+		//
+		// Parameters
+		//	bstrMethodName		name of method (methodName)
+		//	bstrParameters		string with parameters. Commas used for divide
+		//						parameters, string parameters wrapped with "",
+		//						spaces between parameters removed.
+		//
+		// Samples:
+		//	Action Script: ExternalInterface.call("Test1", 3.62, "abcd", "efgh");
+		//	bstrMethodName: Test1
+		//	bstrParameters: 3.62,"abcd","efgh"
+		//
+		//	Action Script: ExternalInterface.call("Test2", "string", 12, 3.1415);
+		//	bstrMethodName: Test2
+		//	bstrParameters: "string",12,3.1415
+		//	
+		//	Action Script: ExternalInterface.call("Test3");
+		//	bstrMethodName: Test3
+		//	bstrParameters: NULL
+		[id(4), helpstring("Called than external function called from flash."
+							" Call of ExternalInterface.call(methodName:String, [parameter:Object])"
+							" should be used."
+							""
+							" Parameters"
+							"	bstrMethodName		name of method (methodName)"
+							"	bstrParameters		string with parameters. Commas used for divide"
+							"						parameters, string parameters wrapped with ''"
+							"						spaces between parameters removed."
+							""
+							" Samples:"
+							"	Action Script: ExternalInterface.call('Test1', 3.62, 'abcd', 'efgh');"
+							"	bstrMethodName: Test1"
+							"	bstrParameters: 3.62,'abcd','efgh'"
+							""
+							"	Action Script: ExternalInterface.call('Test2', 'string', 12, 3.1415);"
+							"	bstrMethodName: Test2"
+							"	bstrParameters: 'string',12,3.1415"
+							""	
+							"	Action Script: ExternalInterface.call('Test3');"
+							"	bstrMethodName: Test3"
+							"	bstrParameters: NULL")]
+		HRESULT OnFlashCallback(
+								//Item ID - unique string, identifying the flash object
+								[in] BSTR bsItemID, 
+								//Name of method (methodName)
+								[in] BSTR bsMethodName,
+								//String with parameters. Commas used for divide 
+								//parameters, string parameters wrapped with "",
+								//spaces between parameters removed.
+								[in] BSTR bsParameters );
+
+
+		// Called when some events occurs	
+		[id(5), helpstring("Called when some events occurs (e.g. composition done)")] 
+		HRESULT OnCGEvent(	//Item or Composition ID - unique string, identifying the CG item or CG composition
+							[in] BSTR bsItemOrCompositionID, 
+							//Event type:
+							//CompositionDisplay
+							//CompositionExit
+							//ScheduleCompositionDisplay
+							//ScheduleCompositionExit
+							//ScheduleItemShow
+							//ScheduleItemHide
+							[in] BSTR bsEventType,
+							//Parameters (intro, show, exit time, layer, params)
+							[in] BSTR bsEventParam );
+	};
+
+	[
+		uuid(0F56D2E7-033C-4A05-BCDA-DF58C9BBF06F),
+		helpstring("MediaLooks Character Generator")
+	]
+	coclass CoMLCharGen
+	{
+		[default] interface IMLCharGen;
+		[default, source] dispinterface IMLCharGenEvents;
+		interface IMLCharGenSchedule;
+		interface IMLXMLPersist;
+		interface IMLProperties;
+		interface IMLCharGenEdit;
+		interface IProvideClassInfo;
+	};
+
+	[
+		uuid(06D779D1-967F-4744-B62F-463F1B89AADE),
+		helpstring("MLCharGenPage Class")
+	]
+	coclass MLCharGenPage
+	{
+		interface IUnknown;
+	};
+};

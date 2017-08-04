@@ -1,0 +1,1321 @@
+//---------------------------------------------------------------------------
+// MDefines.idl : IDL source
+//
+// Description: Interfaces for Medialooks media transport
+//
+//---------------------------------------------------------------------------
+// Copyright (c), Medialooks Soft OOO
+// http://www.medialooks.com/support/
+//
+//---------------------------------------------------------------------------
+//
+// This file and the source code contained within is Intellectual Property
+// of Medialooks Soft OOO. Your use of this source code is subject to
+// the Medialooks End-User License Agreement that can be found
+// here: http://www.medialooks.com/la/.
+//
+//---------------------------------------------------------------------------
+
+import "basetsd.h";
+import "unknwn.idl";
+
+#ifndef REFERENCE_TIME
+typedef LONGLONG REFERENCE_TIME;
+#endif
+
+// Disable warnings:
+// warning MIDL2492: structure containing array of float/double might not be marshalled correctly when using type library marshalling: M_AUDIO_LOUDNESS
+// warning MIDL2492: structure containing array of float/double might not be marshalled correctly when using type library marshalling: M_AUDIO_TRACK_LOUDNESS
+#if (__midl >= 501)
+midl_pragma warning( disable: 2492 )
+#endif
+
+////////////////////////////////////////////////////////////////////////
+cpp_quote("#ifndef PIC_PROPS_DEFINED")
+cpp_quote("#define PIC_PROPS_DEFINED")
+
+typedef struct PIC_PROPS
+{
+	int	fccType;				// First DWORD code from subtype GUID (also for RGB)
+	int	nWidth;					// Width of picture in pixels
+	int	nHeight;				// Height of picture in pixels
+									// For RGB:
+									//	positive value: bottom-up orientation
+									//	negative value: top-down orientation
+	int	nRowWidth;				// Alignment width of buffer's row in pixels.
+									// If nRowWidth == 0 then nRowWidth = nWidth
+} PIC_PROPS;
+
+cpp_quote("#endif")
+
+cpp_quote("#ifndef M_DEFINES_INCLUDED")
+cpp_quote("#define M_DEFINES_INCLUDED")
+
+	// MObject state
+	typedef [v1_enum] enum eMState
+	{
+		eMS_Error = -1,
+		eMS_Closed = 0,			
+		eMS_Stopped,		
+		eMS_Paused,			
+		eMS_Running,
+		eMS_Break
+	} eMState;
+
+	
+	// Structure for date/time information 
+	typedef struct M_DATETIME
+	{
+		//Year (optional, current/next year of not specified )
+		int		nYear;
+		//Month (optional, current/next month of not specified )
+		int		nMonth;
+		//Day  (optional, current/next day of not specified )
+		int		nDay;
+		//Hours
+		int		nHour;
+		//Minutes
+		int		nMinute;
+		//Seconds
+		int		nSecond;
+		//Milliseconds
+		int		nMilliseconds;
+	} M_DATETIME;
+
+	// MObject state
+	typedef [v1_enum] enum eMTimecodeFlags
+	{
+		// Non drop frame (NDF) timecode
+		// WARNING: for 1000/1001 clocks (e.g. 23.98, 29.97, 59.94) the timecode values is NOT equal time 
+		// e.g. 01:00:00:00 is not 1 hour, but 1 hour / 1.001 ~= 3596.40 seconds = 59 min 56.400 seconds 
+		// See SMPTE 12M or http://en.wikipedia.org/wiki/SMPTE_timecode
+		eMTCF_NonDropFrame = 0,
+		// Drop frame (DF) timecode - valid only for 29.97 and 59.94i/p timecoded, for 23.98 ALWAYS NDF used.
+		// Used for compensate timecode and clock deviation - drop 2 timecode labels every minute except 10 minutes.
+		// See SMPTE 12M or http://en.wikipedia.org/wiki/SMPTE_timecode
+		eMTCF_DropFrame	  = 1,
+
+		
+
+		// Film 24 or 23.98 rate (NOTE: For 23.98 Drop frame flag not acceptable)
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_24	  = 0x10,
+		// PAL rate (25 fps)
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_25	  = 0x20,
+		// NTSC Drop Frame (DF) timecode (29.97 fps)
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_30_DF  = 0x41,
+		// NTSC Not Drop Frame
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_30	  = 0x40,
+
+		// Timecode have rate information
+		eMTCF_Rate		= 0xFF0,
+		
+		// Flags for progressive (50p, 59.94p, 60p) rates - even frame
+		eMTCF_Progressive_Even_Frame = 0x100,
+		// Flags for progressive (50p, 59.94p, 60p) rates - odd frame
+		eMTCF_Progressive_Odd_Frame  = 0x200,
+		// Flags for high frame-rate video (up to 240 fps)
+		eMTCF_Progressive_3th_Frame =  0x300,
+		eMTCF_Progressive_4th_Frame =  0x400,
+		eMTCF_Progressive_5th_Frame =  0x500,
+		eMTCF_Progressive_6th_Frame =  0x600,
+		eMTCF_Progressive_7th_Frame =  0x700,
+		eMTCF_Progressive_8th_Frame =  0x800,
+
+		// 50p rate (50 fps)
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_50		= 0x120,
+		// 60p Drop Frame (DF) timecode (59.94 fps)
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_60_DF	= 0x141,
+		// 60p Not Drop Frame
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_60		= 0x140,
+
+		// 50p rate (50 fps)
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_50_Odd	 = 0x220,
+		// 60p Drop Frame (DF) timecode (59.94 fps)
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_60_DF_Odd = 0x241,
+		// 60p Not Drop Frame
+		// (optional, for seek timecode or set in/out position, better DO NOT use it)
+		eMTCF_Rate_60_Odd	  = 0x240,
+
+		// This flags mean what File/Live/Network have timecode stream, in other case, 
+		// timecode claculated from file position or current time in live case.
+		eMTCF_SrcTC				= 0x1000,
+		// Drop frame (DF) timecode (Have timecode stream)
+		// - valid only for 29.97 and 59.94i/p timecoded, for 23.98 ALWAYS NDF used.
+		// Used for compensate timecode and clock deviation - drop 2 timecode labels every minute except 10 minutes.
+		// See SMPTE 12M or http://en.wikipedia.org/wiki/SMPTE_timecode
+		eMTCF_SrcTC_DropFrame	  = 0x1001,
+
+		// Film 24 or 23.98 rate (Have timecode stream)
+		// NOTE: For 23.98 Drop frame flag not acceptable
+		eMTCF_SrcTC_Rate_24	  = 0x1010,
+		// PAL rate (25 fps), (Have timecode stream)
+		eMTCF_SrcTC_Rate_25	  = 0x1020,
+		// NTSC Drop Frame (DF) timecode (29.97 fps), (Have timecode stream)
+		eMTCF_SrcTC_Rate_30_DF  = 0x1041,
+		// NTSC Not Drop Frame, (Have timecode stream)
+		eMTCF_SrcTC_Rate_30	  = 0x1040,
+		
+		// Flags for progressive (50p, 59.94p, 60p) rates - even frame, (Have timecode stream)
+		eMTCF_SrcTC_Progressive_Even_Frame = 0x1100,
+		// Flags for progressive (50p, 59.94p, 60p) rates - odd frame, (Have timecode stream)
+		eMTCF_SrcTC_Progressive_Odd_Frame  = 0x1200,
+
+		// 50p rate (50 fps), (Have timecode stream)
+		eMTCF_SrcTC_Rate_50		= 0x1120,
+		// 60p Drop Frame (DF) timecode (59.94 fps), (Have timecode stream)
+		eMTCF_SrcTC_Rate_60_DF		= 0x1141,
+		// 60p Not Drop Frame, (Have timecode stream)
+		eMTCF_SrcTC_Rate_60		= 0x1140,
+
+		// 50p rate (50 fps), (Have timecode stream)
+		eMTCF_SrcTC_Rate_50_Odd	 = 0x1220,
+		// 60p Drop Frame (DF) timecode (59.94 fps), (Have timecode stream)
+		eMTCF_SrcTC_Rate_60_DF_Odd = 0x1241,
+		// 60p Not Drop Frame, (Have timecode stream)
+		eMTCF_SrcTC_Rate_60_Odd	 = 0x1240,
+
+		// This flags mean what user specify timecode start
+		eMTCF_UserTC				= 0x2000,
+
+		// Drop frame (DF) timecode (user timecode)
+		// - valid only for 29.97 and 59.94i/p timecoded, for 23.98 ALWAYS NDF used.
+		// Used for compensate timecode and clock deviation - drop 2 timecode labels every minute except 10 minutes.
+		// See SMPTE 12M or http://en.wikipedia.org/wiki/SMPTE_timecode
+		eMTCF_UserTC_DropFrame	  = 0x2001,
+
+		// Film 24 or 23.98 rate (user timecode)
+		// NOTE: For 23.98 Drop frame flag not acceptable
+		eMTCF_UserTC_Rate_24	  = 0x2010,
+		// PAL rate (25 fps), (user timecode)
+		eMTCF_UserTC_Rate_25	  = 0x2020,
+		// NTSC Drop Frame (DF) timecode (29.97 fps), (user timecode)
+		eMTCF_UserTC_Rate_30_DF  = 0x2041,
+		// NTSC Not Drop Frame, (user timecode)
+		eMTCF_UserTC_Rate_30	  = 0x2040,
+		
+		// Flags for progressive (50p, 59.94p, 60p) rates - even frame, (user timecode)
+		eMTCF_UserTC_Progressive_Even_Frame = 0x2100,
+		// Flags for progressive (50p, 59.94p, 60p) rates - odd frame, (user timecode)
+		eMTCF_UserTC_Progressive_Odd_Frame  = 0x2200,
+
+		// 50p rate (50 fps), (user timecode)
+		eMTCF_UserTC_Rate_50		= 0x2120,
+		// 60p Drop Frame (DF) timecode (59.94 fps), (user timecode)
+		eMTCF_UserTC_Rate_60_DF		= 0x2141,
+		// 60p Not Drop Frame, (user timecode)
+		eMTCF_UserTC_Rate_60		= 0x2140,
+
+		// 50p rate (50 fps), (user timecode)
+		eMTCF_UserTC_Rate_50_Odd	 = 0x2220,
+		// 60p Drop Frame (DF) timecode (59.94 fps), (user timecode)
+		eMTCF_UserTC_Rate_60_DF_Odd = 0x2241,
+		// 60p Not Drop Frame, (user timecode)
+		eMTCF_UserTC_Rate_60_Odd	 = 0x2240,
+
+		// This flags mean what timecode have user bits (stored in nExtraCounter)
+		eMTCF_SrcTCUserbits = 0x4000,
+
+		// Timecode NOT set -> should be IGNORED
+		eMTCF_LocalTimeTC	= 0x00010000,
+
+		// Timecode NOT set -> should be IGNORED
+		eMTCF_Invalid	= 0x80000000
+	} eMTimecodeFlags;
+
+	// Structure for timecode information 
+	// Used for time intervals and time points representation
+	typedef struct M_TIMECODE
+	{
+		//Hours
+		int					nHours;
+		//Minutes
+		int					nMinutes;
+		//Seconds
+		int					nSeconds;
+		//Frames
+		int					nFrames;
+		//Timecode flags (drop frame timecode, frame rate, progressive rates - see eMTimecodeFlags for details)
+		eMTimecodeFlags		eTCFlags;
+		// (optional) SDI master timestamp (global frame counter) or ATN in DV Case or Range in ASF case
+		// or frame number in MFile case or file index in MPlaylst case, etc.
+		// Note: This information can be skipped or used for transmitt some additional information
+		// Note: From 2017/06/10
+		// For input/outpur from (at this moment ONLY Decklink ) this is timecode user bits:
+		//	 - for receiving eMTCF_SrcTCUserbits mean what timecode user bits received from device,
+		//   - for output ALWAYS output this value (if possible).
+		int					nExtraCounter; 
+	} M_TIMECODE;
+
+// Video colorspace four-char codes 
+	typedef [v1_enum] enum eMFCC
+	{
+		// The default value - usual the same as input or not defined
+		eMFCC_Default	= 0,					
+		// 4:4:4 10 bit (RGB) packed format
+		// Please note - This format not supported by T&G, FlashOverlay filters, also the image scaling not supported
+		eMFCC_r210  = 0x30313272,	
+		// 4:2:2 10 bit (YUV) packed format
+		// Please note - This format not supported by T&G, FlashOverlay filters, also the image scaling not supported
+		eMFCC_v210  = 0x30313276,		
+		// YUV 4:2:0 colorspace (8-bit per pixel)
+		eMFCC_I420   = 0x30323449,
+		// YUV 4:2:0 colorspace (8-bit per pixel)
+		eMFCC_YV12   = 0x32315659,
+		// YUV 4:2:0 colorspace, packed in two planes: Y & UV (8-bit per pixel)
+		eMFCC_NV12   = 0x3231564E,
+		
+		// YUV 4:2:2 colorspace (8-bit per pixel)
+		eMFCC_YUY2   = 0x32595559,
+		// YUV for HD video (CCIR 709) - similar to UYVY (CCIR 601)
+		eMFCC_HDYC   = 0x43594448,		
+		// YUV 4:2:2 colorspace (8-bit per pixel)
+		eMFCC_YVYU   = 0x55595659,
+		// YUV 4:2:2 colorspace (8-bit per pixel)
+		eMFCC_UYVY   = 0x59565955,
+		
+		// RGB 4:4:4 colorspace (8-bit per pixel)
+		eMFCC_RGB24  = 0xe436eb7d,
+		// RGB 4:4:4 colorspace (8-bit per pixel)
+		eMFCC_RGB32  = 0xe436eb7e,
+		// RGB 4:4:4:4 colorspace with alpha (8-bit per pixel)
+		eMFCC_ARGB32 = 0x773c9ac0,
+		// For masks / planes
+		eMFCC_RGB8 = 0xe436eb7a,
+		
+		// Special GPU types -> in this case the samples contains OpenGL texture handle
+		//eMFCC_GPU_YUV422   = 0x65FFAF79, 
+
+		// Special GPU types -> in this case the samples contains OpenGL texture handle 
+		//eMFCC_GPU_RGB444   = 0x65FFAF80, 
+	} eMFCC;
+
+	// Scale type / aspect ratio correction
+	typedef [v1_enum] enum eMScaleType
+	{
+		// The default correction 
+		eMST_Default  = 0,				
+		// No aspect ratio correction
+		eMST_IgnoreAR,					
+		// Letter-Box / Pillar-Box correction (the black bars on the top/bottom or right/left)
+		eMST_LetterBox,			
+		// Crop - crop image on the top/bottom or left/right
+		eMST_Crop,					
+		// No scaling 1:1 
+		eMST_NoScale
+	} eMScaleType;
+
+	// Interlace type
+	typedef [v1_enum] enum eMInterlace
+	{
+		// The default/unknown value 
+		eMI_Default = 0x000,				
+		// Field 1 (Top) first - Usual PAL
+		eMI_Field1First = 0x001,			
+		// Field 2 (Bottom) first - Usual NTSC, DV (both PAL/NTSC)
+		eMI_Field2First = 0x002,			
+		// Progressive
+		eMI_Progressive = 0x003,
+		// For e.g. override format
+		eMI_Inverse = 0x004,
+		// For keep one field
+		eMI_OneField = 0x005,
+
+		// Special flags for MFAVPropsSet deinterlace
+
+		// Get first field of interlaced video
+		eMI_DeinterlaceF1 = 0x100,
+
+		// Get second field of interlaced video
+		eMI_DeinterlaceF2 = 0x200
+		
+	} eMInterlace;
+
+	// 3D video type
+	typedef [v1_enum] enum eM3DFormat
+	{
+		// 2D format
+		eM3D_None = 0x000,				
+		// Auto 3D format detection
+		eM3D_Auto = 0x001,			
+		// Horizontal stereopair
+		eM3D_SideBySide = 0x200,
+		// Vertical stereopair
+		eM3D_TopAndBottom = 0x400,
+		// Tile format (not implemented yet) - see http://www.sisveltechnology.it/media/files/3dtv/3D-Tile-Format-implementation-notes.pdf for detailes
+		eM3D_Tile = 0x800,
+		// Flags
+		eM3D_FullFlag = 0x1000,
+		// Horizontal stereopair
+		eM3D_FullSideBySide = 0x1200,
+		// Vertical stereopair
+		eM3D_FullTopAndBottom = 0x1400
+	} eM3DFormat;
+
+	// Video format definition
+	// Note: the formats in resolution increment order (for check bets fit res)
+	typedef [v1_enum] enum eMVideoFormat
+	{
+		eMVF_Custom,
+
+		// Standard video formats
+		eMVF_NTSC,				// SMPTE 259M - SD NTSC standard (720x486@59.94i)
+		eMVF_NTSC_2398,			// NTSC with 24/1001 rate (PSF)
+		eMVF_NTSC_16x9,			// NTSC 16x9 format
+
+		eMVF_PAL,				// SMPTE 259M - SD PAL standard  (720x576@50i)
+		eMVF_PAL_16x9,			// PAL 16x9 format
+
+		eMVF_HD720_50p,			// SMPTE 296M - HD 720p @ 50Hz standard
+		eMVF_HD720_5994p,		// SMPTE 296M - HD 720p @ 60/1001Hz standard
+		eMVF_HD720_60p,			// SMPTE 296M - HD 720p @ 60Hz standard
+
+		eMVF_HD1080_2398p,		// SMPTE 274M - HD 1080i @ 24/1001Hz standard
+		eMVF_HD1080_24p,		// SMPTE 274M - HD 1080i @ 24Hz standard
+		eMVF_HD1080_25p,		// SMPTE 274M - HD 1080p @ 25Hz standard
+		eMVF_HD1080_2997p,		// SMPTE 274M - HD 1080p @ 30/1001Hz standard
+		eMVF_HD1080_30p,		// SMPTE 274M - HD 1080p @ 30Hz standard
+
+		eMVF_HD1080_50i,		// SMPTE 274M - HD 1080i @ 50Hz standard
+		eMVF_HD1080_5994i,		// SMPTE 274M - HD 1080i @ 60/1001Hz standard
+		eMVF_HD1080_60i,		// SMPTE 274M - HD 1080i @ 60Hz standard
+
+		eMVF_HD1080_50p,		// SMPTE 274M - HD 1080p @ 50Hz standard
+		eMVF_HD1080_5994p,		// SMPTE 274M - HD 1080i @ 60/1001Hz standard
+		eMVF_HD1080_60p,		// SMPTE 274M - HD 1080p @ 60Hz standard
+
+		// Special video formats
+
+		eMVF_2K_DCI_2398p,
+		eMVF_2K_DCI_24p,
+		eMVF_2K_DCI_25p,
+
+		eMVF_2K_DCI_50p,
+		eMVF_2K_DCI_5994p,
+		eMVF_2K_DCI_60p,
+
+		eMVF_2K_2398p,			// 2K Resolution 2048x1556 @ 24/1001 Hz
+		eMVF_2K_24p,			// 2K Resolution 2048x1556 @ 24 Hz
+		eMVF_2K_25p,			// 2K Resolution 2048x1556 @ 25 Hz
+
+		eMVF_4K_UHD_50i,
+		eMVF_4K_UHD_5994i,
+		eMVF_4K_UHD_60i,
+
+		eMVF_4K_UHD_2398p,
+		eMVF_4K_UHD_24p,
+		eMVF_4K_UHD_25p,
+		eMVF_4K_UHD_2997p,
+		eMVF_4K_UHD_30p,
+
+		eMVF_4K_DCI_2398p,
+		eMVF_4K_DCI_24p,
+		eMVF_4K_DCI_25p,
+
+		eMVF_4K_UHD_50p,
+		eMVF_4K_UHD_5994p,
+		eMVF_4K_UHD_60p,
+
+		eMVF_4K_DCI_50p,
+		eMVF_4K_DCI_5994p,
+		eMVF_4K_DCI_60p,
+
+		eMVF_Disabled,
+
+		eMVF_3D_SbS_720_50p = eMVF_HD720_50p + 0x200,
+		eMVF_3D_SbS_720_5994p = eMVF_HD720_5994p + 0x200,
+		eMVF_3D_SbS_720_60p = eMVF_HD720_60p + 0x200,
+
+		eMVF_3D_SbS_1080_2398p = eMVF_HD1080_2398p + 0x200,
+		eMVF_3D_SbS_1080_24p = eMVF_HD1080_24p + 0x200,
+		eMVF_3D_SbS_1080_25p = eMVF_HD1080_25p + 0x200, // ???
+		eMVF_3D_SbS_1080_2997p = eMVF_HD1080_2997p + 0x200, // ???
+		eMVF_3D_SbS_1080_30p = eMVF_HD1080_30p + 0x200, // ???
+		eMVF_3D_SbS_1080_50i = eMVF_HD1080_50i + 0x200,
+		eMVF_3D_SbS_1080_5994i = eMVF_HD1080_5994i + 0x200,
+		eMVF_3D_SbS_1080_60i = eMVF_HD1080_60i + 0x200,
+		eMVF_3D_SbS_1080_50p = eMVF_HD1080_50p + 0x200,		// ??
+		eMVF_3D_SbS_1080_5994p = eMVF_HD1080_5994p + 0x200, // ??
+		eMVF_3D_SbS_1080_60p = eMVF_HD1080_60p + 0x200,		// ??
+
+		
+		eMVF_3D_TnB_720_50p = eMVF_HD720_50p + 0x400,
+		eMVF_3D_TnB_720_5994p = eMVF_HD720_5994p + 0x400,
+		eMVF_3D_TnB_720_60p = eMVF_HD720_60p + 0x400,
+
+		eMVF_3D_TnB_1080_2398p = eMVF_HD1080_2398p + 0x400,
+		eMVF_3D_TnB_1080_24p = eMVF_HD1080_24p + 0x400,
+		eMVF_3D_TnB_1080_25p = eMVF_HD1080_25p + 0x400, // ???
+		eMVF_3D_TnB_1080_2997p = eMVF_HD1080_2997p + 0x400, // ???
+		eMVF_3D_TnB_1080_30p = eMVF_HD1080_30p + 0x400, // ???
+		eMVF_3D_TnB_1080_50p = eMVF_HD1080_50p + 0x400,		// ??
+		eMVF_3D_TnB_1080_5994p = eMVF_HD1080_5994p + 0x400, // ??
+		eMVF_3D_TnB_1080_60p = eMVF_HD1080_60p + 0x400,		// ??
+
+		eMVF_3D_Full_SbS_1080_2398p = eMVF_HD1080_2398p + 0x1200,
+		eMVF_3D_Full_SbS_1080_24p = eMVF_HD1080_24p + 0x1200,
+		eMVF_3D_Full_SbS_1080_25p = eMVF_HD1080_25p + 0x1200, // ???
+		eMVF_3D_Full_SbS_1080_2997p = eMVF_HD1080_2997p + 0x1200, // ???
+		eMVF_3D_Full_SbS_1080_30p = eMVF_HD1080_30p + 0x1200, // ???
+		eMVF_3D_Full_SbS_1080_50i = eMVF_HD1080_50i + 0x1200,
+		eMVF_3D_Full_SbS_1080_5994i = eMVF_HD1080_5994i + 0x1200,
+		eMVF_3D_Full_SbS_1080_60i = eMVF_HD1080_60i + 0x1200,
+		eMVF_3D_Full_SbS_720_50p = eMVF_HD720_50p + 0x1200,
+		eMVF_3D_Full_SbS_720_5994p = eMVF_HD720_5994p + 0x1200,
+		eMVF_3D_Full_SbS_720_60p = eMVF_HD720_60p + 0x1200,
+
+		eMVF_3D_Full_TnB_1080_2398p = eMVF_HD1080_2398p + 0x1400,
+		eMVF_3D_Full_TnB_1080_24p = eMVF_HD1080_24p + 0x1400,
+
+		eMVF_3D_Full_TnB_1080_25p = eMVF_HD1080_25p + 0x1400, // ???
+		eMVF_3D_Full_TnB_1080_2997p = eMVF_HD1080_2997p + 0x1400, // ???
+		eMVF_3D_Full_TnB_1080_30p = eMVF_HD1080_30p + 0x1400, // ???
+
+		eMVF_3D_Full_TnB_1080_50i = eMVF_HD1080_50i + 0x1400,
+		eMVF_3D_Full_TnB_1080_5994i = eMVF_HD1080_5994i + 0x1400,
+		eMVF_3D_Full_TnB_1080_60i = eMVF_HD1080_60i + 0x1400,
+		eMVF_3D_Full_TnB_720_50p = eMVF_HD720_50p + 0x1400,
+		eMVF_3D_Full_TnB_720_5994p = eMVF_HD720_5994p + 0x1400,
+		eMVF_3D_Full_TnB_720_60p = eMVF_HD720_60p + 0x1400,
+	} eMVideoFormat;
+
+	// Video properties structure
+	// - this structure used for get/set video properties of MFrame
+	typedef struct M_VID_PROPS
+	{
+		// Video format
+		// If specified: 
+		//	- nWidth, nHeight, eInterlace, dblRate fields ignored
+		//	- fccType (if not specified) assumed UYVY (YUV 4:2:2) for SD (CCIR. 601) and HDYC (YUV 4:2:2) for HD (CCIR. 709)
+		//  - aspect ratio (if not specified) assumed to be 4:3 for SD, and 16:9 for HD
+		eMVideoFormat		eVideoFormat; 
+
+		// Video colorspace four-char code (see eMFCC for details)
+		eMFCC				fccType;					
+
+		// Width of picture in pixels (Zero or < 0 - original size)
+		int					nWidth;						
+
+		// Height of picture in pixels (Zero - original size)
+		// For RGB:
+		//	positive value: bottom-up orientation
+		//	negative value: top-down orientation
+		int					nHeight;			
+
+		// Video row bytes (can be 0)
+		int					nRowBytes;
+				
+		// Video interlacing type (see eMInterlace for details)
+		eMInterlace			eInterlace;
+		
+		// The X dimension of picture aspect ratio. For example, 16 for a 16:9 display.
+		// Note:
+		// If nAspectX == 0 OR nAspectY == 0 Then:
+		//		eScaleType == eMST_IgnoreAR -> used the original aspect ration
+		//		eScaleType != eMST_IgnoreAR -> used the width/height aspect ration
+		// If nAspectX < 0 AND nAspectY < 0 Then:
+		//		-> used the width/height aspect ration
+		short				nAspectX;				
+		// The Y dimension of picture aspect ratio. For example, 9 for a 16:9 display.
+		// Note:
+		// If nAspectX == 0 OR nAspectY == 0 Then:
+		//		eScaleType == eMST_IgnoreAR -> used the original aspect ration
+		//		eScaleType != eMST_IgnoreAR -> used the width/height aspect ration
+		// If nAspectX < 0 AND nAspectY < 0 Then:
+		//		-> used the width/height aspect ration
+		short				nAspectY;				
+		// Video frame-rate 
+		double				dblRate;		
+		// Scale type: 1 - None, 2 - Letter-Box, 3 - Crop (only set)
+		eMScaleType			eScaleType;
+		// 3D video format
+		eM3DFormat			e3DFormat;
+	} M_VID_PROPS;
+
+	
+	// Audio properties structure
+	// - this structure used for get/set audio properties of M Object
+	typedef struct M_AUD_PROPS
+	{
+		// Audio channels
+		// -1 for no AUDIO (other fields ignored)
+		// 0 for default audio (other fields ignored)
+		// 1..16 for set audio (use other fields)
+		int nChannels;					
+		// Samples per seconds e.g. 48000
+		int nSamplesPerSec;				
+		// Bits per sample e.g. 16 
+		// Note: only 16, 20, 24, 32 bits supported (20, 24 bits stored in 3 bytes)
+		//		 for float 32, use -32 bits value
+		int nBitsPerSample;		
+		// Audio tracks information.
+		// For last channel in track the correspoding bit set to 1.
+		// if e.g. we have two tracks with 6 ch (first) and 2 ch (second), after merging these tracks we got 8 ch audio
+		// in this case, bit 5 and bit 7 (optional) set to 1:   nTrackSplitBits = 1 << 5 | 1 << 7 : 00000000 00000000 00000000 10100000
+		// if e.g. we have eight stereo tacks, bit 1, 3, 5, 7, 9, 11, 13, 15 set to 1: 00000000 00000000 10101010 10101010
+		// etc.
+		// By default is zero (no track info)
+		int nTrackSplitBits;
+	} M_AUD_PROPS;
+
+	// TODO: Make simple digramm with describe of format type
+	// Set/Get format type (used in IMFormat interface)
+	typedef [v1_enum] enum eMFormatType
+	{
+		eMFT_Input = 0,		// Input format 
+						// (can be changed ONLY for MLive object)
+						// For live -> the capture format of device (SET and GET)
+						// For files -> the original file format (only GET)
+						// For renderers -> the current input format (only GET)
+						
+		eMFT_Convert = 1,	// Conversion format of object (SET and GET)
+						// (the conversion performed if required)
+						// 
+						// If not set:
+						// For renderer -> the automatic detection performed and used first suitable format
+						// For source object -> the original format used
+						// Note:
+						// If conversion format not set, the output format could be changed during playback
+						// (e.g. if playlist contain files with diffrent resultion).
+
+		eMFT_Override = 2,	// Override input format (SET and GET)
+						// ONLY FOR VIDEO
+						// (only eInterlace, aspect_ratio and eScaleType member used)
+						// For set correct interlace flags / aspect_ratio for files (sometimes auto-detection could be wrong)
+						// e.g. some live sources and files (especially in AVI format) not provide interlace information or apsect-ratio 
+						// - in this case the correct interlace/AR could be set.
+						// Also this properties can be used for correct convert 
+
+		eMFT_Output = 3,	// Current output format of object (only GET)
+							// If conversion format set -> conversion format
+							// If not set -> input format + override settings
+	} eMFormatType;
+
+	typedef [v1_enum] enum eMFrameFlags
+	{
+		// Main flags
+		eMFF_None			= 0,
+		eMFF_Break			= 1,				// Stream break flag (e.g. first sample or first after seeking)
+		eMFF_Last			= 2,				// Last frame in stream flag (e.g. last frame in file) NOT IMPLEMENTED YET
+		eMFF_Dup			= 0x11,				// Duplicated frame flag (usual with time break: e.g. 10.120, 10.160 D, 10.200 B,  )
+		eMFF_Pause			= 0x21,				// Paused frame flag
+
+		eMFF_AddedFrame		= 0x40,				// Frame added (e.g. during Live MFPacker time correction, and fps conversion(todo) )
+		eMFF_SkippedFrame	= 0x80,				// At least one previous frame is skipped
+		
+		eMFF_Live	 = 0x100,			// Source is Live flag (for not delay sample if possible)
+		eMFF_Net	 = 0x200,			// Source is Network stream (for not block the sample)
+
+		eMFF_Reverse = 0x1000,			// Reverse playback flag
+
+		eMFF_Main_Mask = 0xFFFF,		// Main flags mask
+
+		// Picture type (I/B/P etc.) flags	
+		eMFF_Intra = 0x010000,					// Intra
+		eMFF_Predicted = 0x020000,				// Predicted
+		eMFF_Bidir_Predicted = 0x030000,		// Bi-dir predicted
+		eMFF_S_GMC_VOP_MPEG4 = 0x040000,		// S(GMC)-VOP MPEG4 ?
+		eMFF_Switching_Intra = 0x050000,		// Switching Intra
+		eMFF_Switching_Predicted = 0x060000,	// Switching Predicted
+		eMFF_BI = 0x070000,						// BI type
+		eMFF_Type_Mask	= 0x0F0000,				// Type flags mask 
+
+		//////////////////////////////////////////////////////////////////////////
+		// Flags combination (e.g. for C#)
+
+		eMFF_Reverse_Break	 = 0x1001,					
+		eMFF_Reverse_Last	 = 0x1002,
+		eMFF_Reverse_Pause	 = 0x1021,
+		
+		eMFF_Last_Break	= 0x03,
+		eMFF_Last_Dup	= 0x13,				
+		eMFF_Last_Pause	= 0x23,				
+
+		eMFF_Live_Break	= 0x101,			
+		eMFF_Live_Last	= 0x102,			
+		eMFF_Live_Last_Break = 0x103,
+		eMFF_Live_AddedFrame = 0x140,
+		eMFF_Live_SkippedFrame = 0x180,
+		
+		eMFF_Net_Break	= 0x201,			
+		eMFF_Net_Last	= 0x202,			
+		eMFF_Net_Last_Break = 0x203,
+
+		eMFF_Break_Intra = 0x010001,				
+		eMFF_Break_Predicted = 0x020001,			
+		eMFF_Break_Bidir_Predicted = 0x030001,		
+		eMFF_Break_S_GMC_VOP_MPEG4 = 0x040001,		
+		eMFF_Break_Switching_Intra = 0x050001,		
+		eMFF_Break_Switching_Predicted = 0x060001,	
+		eMFF_Break_BI = 0x070001,
+
+		eMFF_Reverse_Intra = 0x011000,				
+		eMFF_Reverse_Predicted = 0x021000,			
+		eMFF_Reverse_Bidir_Predicted = 0x031000,		
+		eMFF_Reverse_S_GMC_VOP_MPEG4 = 0x041000,		
+		eMFF_Reverse_Switching_Intra = 0x051000,		
+		eMFF_Reverse_Switching_Predicted = 0x061000,	
+		eMFF_Reverse_BI = 0x071000,
+
+		eMFF_Reverse_Break_Intra = 0x011001,				
+		eMFF_Reverse_Break_Predicted = 0x021001,			
+		eMFF_Reverse_Break_Bidir_Predicted = 0x031001,		
+		eMFF_Reverse_Break_S_GMC_VOP_MPEG4 = 0x041001,		
+		eMFF_Reverse_Break_Switching_Intra = 0x051001,		
+		eMFF_Reverse_Break_Switching_Predicted = 0x061001,	
+		eMFF_Reverse_Break_BI = 0x071001,
+
+		eMFF_Net_Intra = 0x010200,				
+		eMFF_Net_Predicted = 0x020200,			
+		eMFF_Net_Bidir_Predicted = 0x030200,		
+		eMFF_Net_S_GMC_VOP_MPEG4 = 0x040200,		
+		eMFF_Net_Switching_Intra = 0x050200,		
+		eMFF_Net_Switching_Predicted = 0x060200,	
+		eMFF_Net_BI = 0x070200,
+
+		eMFF_Net_Break_Intra = 0x010201,				
+		eMFF_Net_Break_Predicted = 0x020201,			
+		eMFF_Net_Break_Bidir_Predicted = 0x030201,		
+		eMFF_Net_Break_S_GMC_VOP_MPEG4 = 0x040201,		
+		eMFF_Net_Break_Switching_Intra = 0x050201,		
+		eMFF_Net_Break_Switching_Predicted = 0x060201,	
+		eMFF_Net_Break_BI = 0x070201,
+
+		// For Buffer/Rate control mechanism
+		eMFF_BufferPos_Zero		= 0x01000000, // For control presents of buffering information
+		eMFF_BufferPos_Min		= 0x40000000,
+		eMFF_BufferPos_Max		= 0x7E000000, // 125 levels (1..64 - from 0 to MIN, 64..126 from MIN to MAX)
+		eMFF_BufferPos_Overflow = 0x7F000000, // The buffer exeed maximum size value
+
+		// TODO: Add other combination for C#
+	} eMFrameFlags;
+	
+	// A/V Frame time definition
+	typedef struct M_TIME	// 92 bytes
+	{
+		REFERENCE_TIME		rtStartTime;		// The start time of frame (position in file)
+		REFERENCE_TIME		rtEndTime;		// The end time of frame (position in file)
+		M_TIMECODE			tcFrame;			// Timecode of frame (if no timecode, the position converted to DROP FRAME timecode, but eMAF_TC_Valid flag not set)
+		eMFrameFlags		eFFlags;			// Break, Live, Network etc. flags (see eMFrameFlags for details)
+	} M_TIME;
+
+	typedef [v1_enum] enum eMANCFlags
+	{
+		eMAF_None = 0,				
+		eMAF_AL_Valid =	0x02,		// Audio loudness valid 
+	} eMANCFlags;
+
+
+	// Audio loudless information - all values in dBFS (sin) - -90 dB silence, 0 dB)
+	typedef struct M_AUDIO_LOUDNESS
+	{
+		// Next values per channel (max channel is nValidChannels)
+		float		arrVUMeter[32];		// ANSI C 16.5 IEC 268-17 VU Meter level in dBFS (sin): -90 dB silence, 0 dB max audio (300 msec / 90% attack, 300 msec / 10% release)
+		float		arrVUPeaks[32];		// VU Meter peaks in dBFS (sin): -90 dB silence, 0 dB max audio
+		float		arrRMS[32];			// Loudless for the frame in dBFS (sin): -90 dB silence, 0 dB max audio 
+
+		// Next values per track (max track is nValidTracks) NOT IMPLEMENTED YET
+		// See the http://tech.ebu.ch/loudness for details.
+		float		arrEBUMode_M[32];	// Moment (400 msec) ‘EBU Mode’ metering, original and output audio
+		float		arrEBUMode_S[32];	// Short (3000 msec) ‘EBU Mode’ metering, original and output audio
+		float		arrEBUMode_I[32];	// Intermediate (from start) ‘EBU Mode’ metering, original and output audio
+		float		arrPeaks_QPPM[32];	// QPPM (Quasi Peak Programme Meter) peaks (10 msec integration) for one frame
+		float		arrPeaks_TPL[32];	// EBU TPL (True Peak Level) peaks for one frame
+
+		int			nValidChannels;		// Number of valid channels
+		int			nValidTracks;		// Number of valid tracks
+		int			nTracksSplitBit;	// Track split bits
+	} M_AUDIO_LOUDNESS;
+
+	// Ancilliary data information
+	// Aux data (e.g. CC) stored in frame
+	typedef struct M_ANC_DATA	// ? bytes
+	{
+		eMANCFlags			eFlags;			// Set of eMAUXFlags
+				
+		M_AUDIO_LOUDNESS		audOriginal;			// The original audio loudness
+		M_AUDIO_LOUDNESS		audOutput;			// Output audio loudness (after apply the gain factor)
+	} M_ANC_DATA;
+
+	typedef struct M_AV_PROPS
+	{
+		M_VID_PROPS	vidProps;		// 32 bytes
+		M_AUD_PROPS	audProps;		// 12 bytes
+		M_ANC_DATA	ancData;		
+		BOOL		bLocked;			// Used for separete professional video sources (e.g. BMD, DELTACAST, StreamLabs) from consumer DShow devices (TV-Tuners, WEB cams etc.)
+	} M_AV_PROPS;
+
+	// Audio loudless information - all values in dBFS (sin) - -90 dB silence, 0 dB)
+	typedef struct M_AUDIO_TRACK_LOUDNESS
+	{
+		// This values per channel (max channel is nValidChannels)
+		float		arrVUMeter[32];		// ANSI C 16.5 IEC 268-17 VU Meter level in dBFS (sin): -90 dB silence, 0 dB max audio (300 msec / 90% attack, 300 msec / 10% release)
+		float		arrVUPeaks[32];		// VU Meter peaks in dBFS (sin): -90 dB silence, 0 dB max audio
+		float		arrRMS[32];			// Root Mean Square (RMS) for the frame in dBFS (sin): -90 dB silence, 0 dB max audio 
+
+		// This values per track
+		float		arrEBUMode_M;		// Moment (400 msec) ‘EBU Mode’ metering, original and output audio (see http://tech.ebu.ch/loudness)
+		float		arrEBUMode_S;		// Short (3000 msec) ‘EBU Mode’ metering, original and output audio
+		float		arrEBUMode_I;		// Intermediate (from start) ‘EBU Mode’ metering, original and output audio
+		float		arrPeaks_QPPM;		// QPPM (Quasi Peak Programme Meter) peaks (10 msec integration) for one frame
+		float		arrPeaks_TPL;		// EBU TPL (True Peak Level) peaks for one frame
+
+		int			nValidChannels;		// Number of valid channels
+	} M_AUDIO_TRACK_LOUDNESS;
+
+	// Audio track mdoe
+	typedef [v1_enum] enum eMAudioTrackMode
+	{
+		eMAT_Disabled,			// Track disabled. 
+
+		eMAT_Enabled,			// (default) Track enabled or used for eMAT_Mix_Exclusive mixing, can be used for for multiple track audio output	
+								// (e.g. for have eng of SDI audio 0-1, german on SDI audio 2-3 etc.) 
+
+								// Example: let have 3 stereo tracks (6 channels total) and want output only 
+								// track #2, #3 and skip track #1 (4 channels total): 
+								// pTrack[0].TrackModeSet( eMAT_Disabled, ... ); 
+								// pTrack[1].TrackModeSet( eMAT_Enabled, ... ); 
+								// pTrack[2].TrackModeSet( eMAT_Enabled, ... ); 
+								//
+
+		eMAT_Exclusive,			// Only this track enabled. After set, all other tracks mode set to eMAT_Disabled (e.g. for switch languages)
+								// Note: After call, the other track state could be change ONLY to eMAT_Exclusive.
+
+								// Example: Want output only track #2
+								// pTrack[1].TrackModeSet( eMAT_Exclusive, ... ); 
+								
+
+		eMAT_Mix_Exclusive,		// Only this track enabled and mixed with all eMAT_Enabled tracks.
+								// After set, for all other tracks with mode expect eMAT_Disable, mode set to eMAT_Enable.
+								// Note: 
+								// After call, the other track state could be change ONLY to eMAT_Disabled or eMAT_Enabled. 
+								// The resulting number of channels is eMAT_Mix_Exclusive track channels,
+								// - the extra channels discarded or fill by silence. For convert e.g. 5.1 audio to 2Ch, 
+								// set the number of output channels for 6Ch track first. 
+								// 
+								// e.g. 
+								// Track #1 - eMAT_Enabled - stereo
+								// Track #2 - eMAT_Enabled - 5.1 audio
+								// Track #3 - eMAT_Enabled - stereo
+								//
+								// pTrack[2].TrackModeSet( eMAT_Mix_Exclusive, ... ) -> the channel 3..6 of track #2 discarded.
+								// or 
+								// pTrack[1].TrackChannelsSet( 2 ); -> enable conversion of 5.1 audio to stereo
+								// pTrack[2].TrackModeSet( eMAT_Mix_Exclusive, ... ) -> the channel 3..6 of track #2 proper mixed.
+
+								// Example: let have 4 stereo tracks (8 channels total) and want mixed output of track #2,#3,#4 (2 channel total)
+								// pTrack[0].TrackModeSet( eMAT_Disabled, ... ); 
+								// pTrack[1].TrackModeSet( eMAT_Enabled, ... ); 
+								// pTrack[2].TrackModeSet( eMAT_Enabled, ... ); 
+								// pTrack[3].TrackModeSet( eMAT_Mix_Exclusive, ... ); -> the mix of tracks #1,#2,#3
+
+	
+		eMAT_Enabled_AddTo,		// Track enabled, and added to target track. If the state of specified track eMAT_Disabled -> the same as eMAT_Enabled mode
+								// Note the target track state could be eMAT_Enabled_AddWith.
+								//
+								// Example: 
+								// pTrack[0].TrackModeSet( eMAT_Enabled_AddTo, 2 ); -> output 
+								// pTrack[1].TrackModeSet( eMAT_Enabled, ... );		-> output
+								// pTrack[2].TrackModeSet( eMAT_Enabled, ... );		-> the mix output of track #1 and #3
+
+								// pTrack[0].TrackModeSet( eMAT_Enabled_AddTo, 2 ); -> output 
+								// pTrack[1].TrackModeSet( eMAT_Enabled, ... );		-> output
+								// pTrack[2].TrackModeSet( eMAT_Disabled, ... );		-> null
+
+								// pTrack[0].TrackModeSet( eMAT_Enabled_AddTo, 2 ); -> output 
+								// pTrack[1].TrackModeSet( eMAT_Enabled, ... );		-> output
+								// pTrack[2].TrackModeSet( eMAT_Enabled_AddWith, 1 );		-> the mix of tracks #1,#2,#3
+
+		eMAT_Disabled_AddTo		// Track disabled, but added to target track. If the state of specified track eMAT_Disabled -> the same as eMAT_Enabled mode
+								// Note the target track state could be eMAT_Enabled_AddWith.
+								//
+								// Example: 
+								// pTrack[0].TrackModeSet( eMAT_Disabled_AddTo, 2 ); -> null 
+								// pTrack[1].TrackModeSet( eMAT_Enabled, ... );		-> output
+								// pTrack[2].TrackModeSet( eMAT_Enabled, ... );		-> the mix output of track #1 and #3
+
+								// pTrack[0].TrackModeSet( eMAT_Enabled_AddTo, 2 ); -> output 
+								// pTrack[1].TrackModeSet( eMAT_Enabled, ... );		-> output
+								// pTrack[2].TrackModeSet( eMAT_Disabled, ... );		-> null
+
+								// pTrack[0].TrackModeSet( eMAT_Enabled_AddTo, 2 ); -> output 
+								// pTrack[1].TrackModeSet( eMAT_Enabled, ... );		-> output
+								// pTrack[2].TrackModeSet( eMAT_Enabled_AddWith, 1 );		-> the mix of tracks #1,#2,#3
+								
+						
+	} eMAudioTrackMode;
+
+
+	// Playlist item type
+	typedef [v1_enum] enum eMItemType
+	{
+		eMPIT_File,				// File item (or network source)
+		eMPIT_Live,				// Live item
+		eMPIT_Playlist,			// Playlist item
+		eMPIT_Command,			// Command 
+	} eMItemType;
+
+	// Start type
+	typedef [v1_enum] enum eMStartType
+	{
+		eMST_Off,					// No start time for playlist item 
+		eMST_Auto,					// Auto (based on previous file duration, in/out points) previous or next file SPECIFIED start time
+									// Can be set ONLY for playlist item AND if at least one item in playlist have SPECIFIED start time
+		eMST_Specified,				// Start time specified, playlist item or break scheduled for specified local time
+	} eMStartType;
+
+	typedef [v1_enum] enum eMCursorType
+	{
+		eMCT_ARROW = 32512,
+		eMCT_IBEAM = 32513,
+		eMCT_WAIT  = 32514,
+		eMCT_CROSS = 32515,
+		eMCT_UPARROW= 32516,
+		eMCT_SIZE  = 32640, 
+		eMCT_ICON  = 32641, 
+		eMCT_SIZENWSE    =32642,
+		eMCT_SIZENESW   =32643,
+		eMCT_SIZEWE= 32644,
+		eMCT_SIZENS= 32645,
+		eMCT_SIZEALL = 32646,
+		eMCT_NO    = 32648, 
+		eMCT_HAND  = 32649,
+		eMCT_APPSTARTING     = 32650, 
+		eMCT_NOCURSOR = 0,
+	} eMCursorType;
+
+	//////////////////////////////////////////////////////////////////////////
+	// IMScene parameters
+
+	typedef [v1_enum] enum eMMoveOption
+	{
+		eMMO_Cursor = 0x0,
+		eMMO_Done = 0x01,
+		eMMO_Start = 0x02,	// Start moving flag - only combined with eMMO_Right, eMMO_Left
+		eMMO_Right = 0x04,
+		eMMO_Left = 0x08,
+		eMMO_Start_Right = 0x06,
+		eMMO_Start_Left = 0x0A,
+		eMMO_Done_Right = 0x05,
+		eMMO_Done_Left = 0x09,
+	} eMMoveOption;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// IMAttributes / IMNodes enums
+
+	// IMA Attributes / Nodes update type
+	typedef [v1_enum] enum eMUpdateType
+	{
+		eMUT_AddNew = 0,		// Only add new values (the previous keep unchanged)
+		eMUT_Update = 1,		// Update all values and add new.
+		eMUT_ClearDest = 2		// Clear all values
+	} eMUpdateType;
+
+	// XML Attributes info type
+	typedef [v1_enum] enum eMInfoType
+	{
+		eMIT_Help,		// Help string	
+		eMIT_Type,		// Attribute type (int, double, string, flags, option, option_fixed)
+		eMIT_Default,   // Default value
+		eMIT_Values,	// Allowed values - comma separated  (for flags and options)
+		eMIT_Min,		// Minimum value (for int, double)
+		eMIT_Max,		// Maximum value (for int, double)
+		eMIT_Dynamic	// Dynamic value (need to be update - usual for options/option_fixed)
+	} eMInfoType;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Frame clone type
+
+	typedef [v1_enum] enum eMFrameClone
+	{
+		eMFC_Props			= 0x000,		// Copy only frame props (M_TIME & M_AV_PROPS), video & audio & data is null (e.g. for events) 
+		eMFC_Video			= 0x001,		// Copy only video & props, audio is null (is possible to add audio later to this frame), data is NOT copied
+		eMFC_VideoRef		= 0x002,		// Keep reference to video block & copy props, audio is null (is possible to add audio later to this frame), data is NOT copied
+		eMFC_Audio			= 0x010,		// Copy only audio & props, video is null (is NOT possible to add video later to this frame), data is NOT copied 
+		eMFC_VideoRef_Audio = 0x012,		// Copy Audio & keep reference to video block & copy props (allowed to modify audio, M_TIME, and M_AV_PROPS flags (e.g. interlace, 3DType, scale, etc) )
+		
+		eMFC_Data			= 0x100,		// Copy data (data+strings)
+		eMFC_Obj			= 0x200,		// Copy objects (for MFFrame only)
+
+		eMFC_Data_Audio		= 0x110,		// Copy data & audio
+		eMFC_ObjData_Audio	= 0x310,		// Copy data & audio
+
+		eMFC_Reference		= 0x312,		// Copy all data and video reference 
+		eMFC_Full			= 0x311,		// Audio & Video copied (for modify data)
+
+		eMFC_ForceCPU		= 0x1000,		// Convert cloned frame to CPU frame (used if source is GPU frame)
+		eMFC_ForceGPU		= 0x2000,		// Convert cloned frame to GPU frame (used if source is CPU frame)
+
+		eMFC_Video_ForceCPU			= 0x1001,		// Copy only video & props, audio is null (is possible to add audio later to this frame), data is NOT copied
+		eMFC_VideoRef_ForceCPU		= 0x1002,		// Keep reference to video block & copy props, audio is null (is possible to add audio later to this frame), data is NOT copied
+		eMFC_VideoRef_Audio_ForceCPU = 0x1012,		// Copy Audio & keep reference to video block & copy props (allowed to modify audio, M_TIME, and M_AV_PROPS flags (e.g. interlace, 3DType, scale, etc) )
+		eMFC_Reference_ForceCPU		= 0x1312,		// Copy all data and video reference 
+		eMFC_Full_ForceCPU			= 0x1311,		// Audio & Video copied (for modify data)
+
+		eMFC_Video_ForceGPU			= 0x2001,		// Copy only video & props, audio is null (is possible to add audio later to this frame), data is NOT copied
+		eMFC_VideoRef_ForceGPU		= 0x2002,		// Keep reference to video block & copy props, audio is null (is possible to add audio later to this frame), data is NOT copied
+		eMFC_VideoRef_Audio_ForceGPU = 0x2012,		// Copy Audio & keep reference to video block & copy props (allowed to modify audio, M_TIME, and M_AV_PROPS flags (e.g. interlace, 3DType, scale, etc) )
+		eMFC_Reference_ForceGPU		= 0x2312,		// Copy all data and video reference 
+		eMFC_Full_ForceGPU			= 0x2311,		// Audio & Video copied (for modify data)
+
+		eMFC_BottomTop_ARGB			= 0x10000,		// Flag for bottom-top ARG clone
+	} eMFrameClone;
+
+
+	
+	//Deck control enums
+	typedef [v1_enum] enum eMBMDDeckControlError
+	{
+		eMDCE_NoError	= 0x6e6f6572,
+		eMDCE_pModeError	= 0x6d6f6572,
+		eMDCE_MissedInPointError	= 0x6d696572,
+		eMDCE_DeckTimeoutError	= 0x64746572,
+		eMDCE_CommandFailedError	= 0x63666572,
+		eMDCE_DeviceAlreadyOpenedError	= 0x64616c6f,
+		eMDCE_FailedToOpenDeviceError	= 0x66646572,
+		eMDCE_InLocalModeError	= 0x6c6d6572,
+		eMDCE_EndOfTapeError	= 0x65746572,
+		eMDCE_UserAbortError	= 0x75616572,
+		eMDCE_NoTapeInDeckError	= 0x6e746572,
+		eMDCE_NoVideoFromCardError	= 0x6e766663,
+		eMDCE_NoCommunicationError	= 0x6e636f6d,
+		eMDCE_BufferTooSmallError	= 0x6274736d,
+		eMDCE_BadChecksumError	= 0x63686b73,
+		eMDCE_UnknownError	= 0x756e6572
+	} eMBMDDeckControlError;
+
+	typedef [v1_enum] enum eMBMDDeckControlMode
+	{
+		eMDCM_NotOpened	= 0x6e746f70,
+		eMDCM_VTRControlMode	= 0x76747263,
+		eMDCM_ExportMode	= 0x6578706d,
+		eMDCM_CaptureMode	= 0x6361706d
+	} eMBMDDeckControlMode;
+
+	typedef [v1_enum] enum eMBMDDeckControlVTRControlState
+	{
+		eMDCS_pMode	= 0x6e76636d,
+		eMDCS_Playing	= 0x76747270,
+		eMDCS_Recording	= 0x76747272,
+		eMDCS_Still	= 0x76747261,
+		eMDCS_ShuttleForward	= 0x76747366,
+		eMDCS_ShuttleReverse	= 0x76747372,
+		eMDCS_JogForward	= 0x76746a66,
+		eMDCS_JogReverse	= 0x76746a72,
+		eMDCS_Stopped	= 0x7674726f
+	} eMBMDDeckControlVTRControlState;
+
+	typedef [v1_enum] enum eMBMDDeckControlEvent
+	{
+		eMDCE_AbortedEvent	= 0x61627465,
+		eMDCE_PrepareForExportEvent	= 0x70666565,
+		eMDCE_ExportCompleteEvent	= 0x65786365,
+		eMDCE_PrepareForCaptureEvent	= 0x70666365,
+		eMDCE_CaptureCompleteEvent	= 0x63636576
+	} eMBMDDeckControlEvent;
+
+	//////////////////////////////////////////////////////////////////////////
+	// Medialooks SBE storage
+
+	typedef enum eStorageFlags
+	{
+		eSF_NoWait = 0x01,
+		eSF_IgnoreTime = 0x02,	// Used e.g. in C# as we can't pass NULL pointer
+		eSF_SyncPoint = 0x04,	// Used e.g. in C# as we can't pass NULL pointer
+	} eStorageFlags;
+
+	typedef enum eStorageUnits
+	{
+		eSU_TimeSec = 0x01,
+		eSU_Bytes = 0x02,
+	} eStorageUnits;
+
+	typedef enum eStorageInitType
+	{
+		eSIT_CreateNew = 0x01,
+		eSIT_ReadExisting = 0x02,
+		eSIT_Append = 0x03,
+	} eStorageInitType;
+
+	//////////////////////////////////////////////////////////////////////////
+	// IMSource flags
+	
+	typedef [v1_enum] enum eFrameGetFlags
+	{
+		eFGT_Normal = 0x00,
+		eFGT_Sync = 0x01,
+		eFGT_FlushBuffers = 0x20,
+		eFGT_Remove = -1
+	} eFrameGetFlags;
+
+	//////////////////////////////////////////////////////////////////////////
+	// MFFormats LL structures
+	
+	typedef enum eMFMediaType
+	{
+		eMFMT_Empty,
+		eMFMT_Video = 1,
+		eMFMT_Audio,
+		eMFMT_Subtitles,
+		eMFMT_Data
+	} eMFMediaType;
+
+	typedef enum eMFPacketFlags
+	{
+		eMFPF_None,
+		eMFPF_SegmentStart = 0x01,
+		eMFPF_Last = 0x02,
+		eMFPF_KeyFrame = 0x10, // Key (IDR frame)
+		eMFPF_Preroll = 0x20,
+
+		// Optional props (e.g. for optimize seeking performance or skipping packets)
+		eMFPF_Predicted = 0x100,
+		eMFPF_BiPredicted = 0x200,
+
+		// For unknown frame type (e.g. from H.264 stream), for update type in mixer 
+		// Limitation: Work for H.264 only
+		eMFPF_ForceDetectType = 0x1000
+	} eMFPacketFlags;
+
+	typedef enum eMFSaveFlags
+	{
+		eMFPF_RawData,
+		eMFPF_Full
+	} eMFSaveFlags;
+
+	typedef struct M_RATIONAL
+	{
+		int nNum;
+		int nDen;
+	} M_RATIONAL;
+
+	typedef struct M_STREAM_INFO
+	{
+		// Media type 
+		eMFMediaType eMediaType;
+		// Codec data
+		LONG		 cbCodecData;
+		LONGLONG	 lpCodecData;
+		// Time base (if not specified in 100 nsec units - 1/10 000 000 sec)
+		M_RATIONAL	 raTimeBase;
+		// For video
+		int			 nWidth;
+		int			 nHeight;
+		int			 nAspectX;
+		int			 nAspectY;
+		double		 dblRate;
+		// For audio
+		int			 nSampleRate;
+		int			 nChannels;
+		int			 nBlockAlign; // requred for WMVA1/WMVA2
+		// Common
+		// Required e.g. for RLE codec
+		int			 nBitsPerCodedSample;
+		// Bitrate (requred for WMVA1/WMVA2)
+		int			 nBitrate;
+		// Codec name or tag 
+		BSTR		 bsCodecNameOrTag;
+	} M_STREAM_INFO;
+
+	typedef struct M_PACKET_INFO
+	{
+		// Packets flags
+		eMFPacketFlags	eFlags;
+		// Packet data
+		LONG			cbPacketData;
+		LONGLONG		lpPacketData;
+		// Packet times in M_STREAM_INFO.raTimeBase (if M_STREAM_INFO.raTimeBase not specified - in 100 nsec units - 1/10 000 000 sec)
+		LONGLONG		llDts;
+		LONGLONG		llPts;
+		LONGLONG		llDuration;
+		// Indexes (optional)
+		REFERENCE_TIME	rtSegmentStart;
+		int				nIndexInSegment; // Index of current packet in segment (current stream)
+		int				nOrderInSegment; // Reading order of packet (all streams)
+		int				nKeyDistance;	 // Distance from key frame (optional)
+		// Index of stream 
+		int				nStreamIndex;
+		// Position in source file (optional)
+		LONGLONG		llFilePos;
+	} M_PACKET_INFO;
+
+	typedef [v1_enum] enum eMFBufferFlags
+	{
+		eMFBF_Empty			= 0x00,
+		eMFBF_Buffer 		= 0x01,
+		eMFBF_Packet 		= 0x02,
+		eMFBF_Frame			= 0x03,
+		eMFBF_Stream		= 0x04,
+		eMFBF_SideData		= 0x10,
+		eMFBF_VideoData		= 0x20,
+		eMFBF_AudioData		= 0x40,
+		eMFBF_RawData		= 0x100,
+		eMFBF_PtrIPC		= 0x300,
+		eMFBF_LocalOnly		= 0x00001000,
+		eMFBF_NoCache		= 0x00002000,
+
+		eMFBF_Local_RawData	= 0x00001100,
+	} eMFBufferFlags;
+
+	typedef enum eMFTransferFlags
+	{
+		eMFTF_Default = 0,
+		eMFTF_CopyLocal = 1,
+		eMFTF_SideDataCopy = 0x10,
+	} eMFTransferFlags;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// For HTML Overlay
+	// 
+	typedef [v1_enum] enum eMFMouseButtons
+	{
+		eMFMB_None = -1,
+		eMFMB_Left = 0,
+		eMFMB_Right,
+		eMFMB_Middle
+	} eMFMouseButtons;
+
+	typedef enum eMFEventsFlags
+	{
+		eMFEF_CAPS_LOCK_ON        = 1 << 0,
+		eMFEF_SHIFT_DOWN          = 1 << 1,
+		eMFEF_CONTROL_DOWN        = 1 << 2,
+		eMFEF_ALT_DOWN            = 1 << 3,
+		eMFEF_LEFT_MOUSE_BUTTON   = 1 << 4,
+		eMFEF_MIDDLE_MOUSE_BUTTON = 1 << 5,
+		eMFEF_RIGHT_MOUSE_BUTTON  = 1 << 6,
+		eMFEF_COMMAND_DOWN        = 1 << 7,
+		eMFEF_NUM_LOCK_ON         = 1 << 8,
+		eMFEF_IS_KEY_PAD          = 1 << 9,
+		eMFEF_IS_LEFT             = 1 << 10,
+		eMFEF_IS_RIGHT            = 1 << 11,
+	} eMFEventsFlags;
+
+	typedef struct MF_MOUSE_EVENT
+	{
+		BOOL bAbsolutePos;
+		eMFEventsFlags	eFlags;
+		double dblPosX;
+		double dblPosY;
+	} MF_MOUSE_EVENT;
+
+	typedef enum eMFKeyEventType
+	{
+		eMFKT_RawKeyDown = 0,
+		eMFKT_KeyDown,
+		eMFKT_KeyUp,
+		eMFKT_Char,
+	} eMFKeyEventType;
+
+	typedef struct MF_KEY_EVENT
+	{
+		eMFKeyEventType eType;
+		eMFEventsFlags	eFlags;
+		int windows_key_code; // The Windows key code for the key event. This value is used by the DOM specification.
+		int native_key_code; // The actual key code genenerated by the platform.
+		int is_system_key; // Indicates whether the event is considered a "system key" event
+	    int character;	// The character generated by the keystroke.
+		int unmodified_character; // Same as |character| but unmodified by any concurrently-held modifiers (except shift). This is useful for working out shortcut keys.
+		int focus_on_editable_field; // True if the focus is currently on an editable field on the page. This is useful for determining if standard key events should be intercepted.
+	} MF_KEY_EVENT;
+
+	typedef enum eMFBrowserCommand
+	{
+		eMFBC_Reload = 0,
+		eMFBC_GoForward,
+		eMFBC_GoBack,
+		eMFBC_StopLoad,
+	} eMFBrowserCommand;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// GPU/MFBuffers Support
+	
+	typedef enum eMFLockType
+	{
+		eMFLT_NoLock = 0,
+		eMFLT_Read = 1,
+		eMFLT_Write = 2,
+		eMFLT_Read_Write = 3,
+	} eMFLockType;
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// MFPipe 
+	
+	typedef struct MF_PIPE_INFO
+	{
+		// Pipe mode
+		int nPipeMode; // Write (1), Read (0)
+		// Connected pipes 
+		int nPipesConnected;
+		// Number of channels
+		int nChannels;
+
+		// Number of frames
+		int nObjectsHave;
+		// Number of frames
+		int nObjectsMax;
+		// Dropped frames
+		int	nObjectsDropped;
+		// Flushed mesages
+		int	nObjectsFlushed;
+	
+		// Number of messages
+		int nMessagesHave;
+		// Number of frames
+		int nMessagesMax;
+		// Dropped frames
+		int	nMessagesDropped;
+		// Flushed frames
+		int	nMessagesFlushed;
+	
+		//// Stream info
+		//LONGLONG	llStreamStartPos;	// The minimum available pos
+		//LONGLONG	llStreamWritePos;	// Stream write pos 
+		//LONGLONG	llStreamReadPos;	// Current stream read or minimum read pos for writer stream
+		//LONGLONG	llStreamDroppedBytes;		// Dropped bytes
+		//LONGLONG	llStreamFlushedBytes;		// Flushed bytes
+		//// Number of stream channels
+		//int nStreamChannels;
+	} MF_PIPE_INFO;
+
+	typedef enum eMFFlashFlags
+	{
+		//eMFFL_EndFlush = 0,
+		//eMFFL_AbortWait = 0x1,
+		eMFFL_ResetCounters = 0x2,
+
+
+		eMFFL_FlushObjects =	0x20,
+		eMFFL_FlushMessages = 0x40,
+		eMFFL_FlushStream = 0x20,
+		eMFFL_FlushAll = 0xF0,
+
+		eMFFL_RemoveChannel = 0x100,
+
+		//eMFFL_AbortWait_FlushObjects =	0x21,
+		//eMFFL_AbortWait_FlushStream = 0x21,
+		//eMFFL_AbortWait_FlushMessages = 0x41,
+		//eMFFL_AbortWait_FlushAll = 0xF1
+	} eMFFlashFlags;
+
+cpp_quote("#endif // M_DEFINES_INCLUDED")
+
+////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+

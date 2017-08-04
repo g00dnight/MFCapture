@@ -1,9 +1,13 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "streamerworker.h"
+#include "MFormats.h"
+
 #include <QMainWindow>
 #include <QFuture>
 #include <atomic>
+#include <QPushButton>
 
 namespace Ui {
 class MainWindow;
@@ -18,17 +22,15 @@ public:
     ~MainWindow();
 
 public slots:
-    void onGrabButtonClick(bool clicked);
+    void onVideoSourceClicked(bool checked);
 
 private:
-    void screenStreamer();
+    //void screenStreamer();
 
     Ui::MainWindow *ui;
 
-    std::atomic_bool streaming;
-    QFuture<void> streamerFuture;
-    QScreen *screen;
-
+    QMap<QPushButton*, StreamerWorker*> videoSources; // QPushButton -> device index in MFormats
+    CComPtr<IMFDevice> mfInstance;
 };
 
 #endif // MAINWINDOW_H

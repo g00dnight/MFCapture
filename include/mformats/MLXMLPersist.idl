@@ -1,0 +1,70 @@
+//---------------------------------------------------------------------------
+// MLXMLPersist.idl : 
+//
+// Description: 
+//
+//---------------------------------------------------------------------------
+// Copyright (c) 2009, MediaLooks Ltd.
+// http://www.medialooks.com (dev@medialooks.com)
+//
+// Author:  Vsevolod V. Burkutsky (VVB)
+// Version:	1.0 (9.12.2009)
+//---------------------------------------------------------------------------
+// CONFIDENTIAL INFORMATION
+//
+// This file is Intellectual Property (IP) of MediaLooks Ltd. 
+//
+//---------------------------------------------------------------------------
+// $Id$
+//---------------------------------------------------------------------------
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+
+cpp_quote( "#ifndef IMLXMLPersist_DEFINDED" )
+cpp_quote( "#define IMLXMLPersist_DEFINDED" )
+
+// Common interface for get/set various properties
+[
+	object,
+	uuid(4D4C7A00-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMLProperties common Interface (for get/set props)"),
+	pointer_default(unique)
+]
+interface IMLProperties : IUnknown
+{
+	[helpstring("Set properties (the XML format supported).")] 
+	HRESULT SetMLProps( [in] BSTR _bsPropName, [in] BSTR _bsPropValue ); 
+		
+	[helpstring("Get properties (the XML format supported).")] 
+	HRESULT GetMLProps( [in] BSTR _bsPropName, [out] BSTR* _pbsPropValue ); 
+};
+
+// Common interface for save/load object state
+[
+	object,
+	uuid(3D8D5BCD-714F-4e15-B74B-ECB20D6A1134),
+	helpstring("IMLXMLPersist Interface"),
+	pointer_default(unique)
+]
+interface IMLXMLPersist : IUnknown
+{
+		[helpstring("Save data to the file.")] 
+		HRESULT SaveToXMLFile([in] BSTR _bsFileName, [in] BOOL _bUnicode );
+
+		[helpstring("Save data to the string, the number of tabs can be specified.")] 
+		HRESULT SaveToXMLString([out] BSTR* _pbsXMLDesc, [in] int _nTabs );
+
+		[helpstring("Load data from string or from file"
+			"Note: For string you can specify the maximum length, if length is less or equal zero, the whole string used.")] 
+		HRESULT LoadFromXML([in] BSTR _bsXMLDescOrFile, [in] int _nLength );
+
+		[helpstring("Save data to the file, the additional param can be used for specify what data to save.")] 
+		HRESULT SaveToXMLFileParam([in] BSTR _bsFileName, [in] BOOL _bUnicode, [in] BSTR _bsAdditionParam );
+
+		[helpstring("Save data to the string, the number of tabs can be specified, the additional param can be used for specify what data to save.")] 
+		HRESULT SaveToXMLStringParam([out] BSTR* _pbsXMLDesc, [in] int _nTabs, [in] BSTR _bsAdditionParam );
+};
+
+cpp_quote( "#endif" )

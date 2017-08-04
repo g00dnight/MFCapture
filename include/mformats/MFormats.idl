@@ -1,0 +1,841 @@
+//---------------------------------------------------------------------------
+// MFormats.idl : IDL source
+//
+// Description: Interfaces for Medialooks MFormats objects
+//
+//---------------------------------------------------------------------------
+// Copyright (c), Medialooks Soft OOO
+// http://www.medialooks.com/support/
+//
+//---------------------------------------------------------------------------
+//
+// This file and the source code contained within is Intellectual Property
+// of Medialooks Soft OOO. Your use of this source code is subject to
+// the Medialooks End-User License Agreement that can be found
+// here: http://www.medialooks.com/la/.
+//
+//---------------------------------------------------------------------------
+
+import "oaidl.idl";
+import "ocidl.idl";
+import "basetsd.h";
+
+
+#include "MInterfaces.idl"
+
+
+cpp_quote("#define MFORMATS_INTERFACES")
+
+		
+typedef enum eMFDeviceType
+{
+	eMFDT_Video,
+	eMFDT_Audio,
+	eMFDT_ExtAudio,
+	eMFDT_ExtAudio_2,
+	eMFDT_ExtAudio_3,
+	eMFDT_ExtAudio_4,
+	eMFDT_ExtAudio_5,
+	eMFDT_ExtAudio_6,
+	eMFDT_ExtAudio_7,
+	eMFDT_ExtAudio_8,
+	eMFDT_ExtAudio_9,
+	eMFDT_ExtAudio_10,
+	eMFDT_ExtAudio_11,
+	eMFDT_ExtAudio_12,
+	eMFDT_ExtAudio_13,
+	eMFDT_ExtAudio_14,
+	eMFDT_ExtAudio_15,
+	eMFDT_ExtAudio_16,
+
+	eMFDT_All,
+} eMFDeviceType;
+
+typedef enum eMFWriterOption
+{
+	eMFWO_Format,
+	eMFWO_VideoCodec,
+	eMFWO_AudioCodec
+} eMFWriterOption;
+
+[
+	object,
+	uuid(4F37703A-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFPersist common Interface for configuration save/load"),
+	pointer_default(unique)
+]
+interface IMFPersist : IUnknown
+{
+	[helpstring("Save configuration data to the file.")] 
+	HRESULT PersistSaveToFile([in] BSTR _bsObject, [in] BSTR _bsFileName, [in] BSTR _bsSaveParam );
+
+	[helpstring("Save configuration data to string")] 
+	HRESULT PersistSaveToString([in] BSTR _bsObject, [out] BSTR* _pbsXMLDesc, [in] BSTR _bsSaveParam );
+
+	[helpstring("Load data from string or from file")] 
+	HRESULT PersistLoad([in] BSTR _bsObject, [in] BSTR _bsXMLDescOrFile, [in] BSTR _bsLoadParam );
+};
+
+[
+		object,
+		uuid(4F366705-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMFFormat Interface -  for set audio/video formats of media objects"),
+		pointer_default(unique)
+]
+interface IMFFormat : IUnknown
+{
+	// Video
+	[helpstring("Get video formats count")] 
+	HRESULT FormatVideoGetCount( [in] eMFormatType _eFormatType, [out] int* _pnCount);
+
+	[helpstring("Get video format of device by it's index")] 
+	HRESULT FormatVideoGetByIndex( [in] eMFormatType _eFormatType, [in] int _nIndex, [out] M_VID_PROPS* _pVidProps, [out] BSTR* _pbsName );
+
+	[helpstring("Set output video format for object. Note: The _bOriginal used ONLY for devices (MLive), for other objects this parameter ignored")] 
+	HRESULT FormatVideoSet( [in] eMFormatType _eFormatType, [in] M_VID_PROPS* _pVidProps );
+
+	[helpstring("Get currently set video format. Note: The _bOriginal used ONLY for files and devices (MFile, MLive), for other objects this parameter ignored")]
+	HRESULT FormatVideoGet( [in] eMFormatType _eFormatType, [out] M_VID_PROPS* _pVidProps, [out] int* _pnIndex, [out] BSTR* _pbsName );
+
+	// Audio
+	[helpstring("Get audio formats (orignal for MLive) number")] 
+	HRESULT FormatAudioGetCount( [in] eMFormatType _eFormatType, [out] int* _pnCount);
+
+	[helpstring("Get audio format of device by it's index")] 
+	HRESULT FormatAudioGetByIndex( [in] eMFormatType _eFormatType, [in] int _nIndex, [out] M_AUD_PROPS* _pAudProps, [out] BSTR* _pbsName );
+
+	[helpstring("Set output audio format for object. Note: The _bOriginal used ONLY for devices (MLive), for other objects this parameter ignored")] 
+	HRESULT FormatAudioSet( [in] eMFormatType _eFormatType, [in] M_AUD_PROPS* _pAudProps );
+
+	[helpstring("Get currently set audio format. Note: The _bOriginal used ONLY for files and devices (MFile, MLive), for other objects this parameter ignored")]
+	HRESULT FormatAudioGet( [in] eMFormatType _eFormatType, [out] M_AUD_PROPS* _pAudProps, [out] int* _pnIndex, [out] BSTR* _pbsName );
+};
+
+
+
+[
+	object,
+	uuid(B22982A1-E0D5-4977-847D-868F5F0BB90F),
+	helpstring("IMFAudioBuffer interface"),
+	pointer_default(unique)
+]
+interface IMFAudioBuffer : IUnknown
+{
+	[helpstring("Load form file to buffer if _lSamplesLoad <= 0 -> try to load whole file.")] 
+	HRESULT BufferLoadFromFile( [in] BSTR _bsLine, [in] BSTR _bsFileName, [in] long _lSamplesOffset, [in] long _lSamplesLoad );
+
+	[helpstring("Set buffer audio props (if not reset -> the current buffer will be resampled)")] 
+	HRESULT BufferPropsSet( [in] BSTR _bsLine, [in] M_AUD_PROPS* _pAudProps, [in] BOOL _bResetBuffer );
+
+	[helpstring("Get buffer props.")] 
+	HRESULT BufferPropsGet( [in] BSTR _bsLine, [out] M_AUD_PROPS* _pAudProps, [out] long* _plSamples );
+
+	[helpstring("Put audio data to buffer, if _pbAudio is NULL -> fill silence.")] 
+	HRESULT BufferPutPtr( [in] BSTR _bsLine, [in] M_AUD_PROPS* _pAudProps, [in] long _lSamples, [in] LONGLONG _pbAudio, [in] BSTR _bsChannelsList );
+
+	[helpstring("Put audio from frame to buffer.")] 
+	HRESULT BufferFramePut( [in] BSTR _bsLine, [in] IMFFrame* _pFrame, [in] BSTR _bsChannelsList );
+
+	[helpstring("Read audio from buffer to frame - if _nSamples == 0 -> the audio duration calculated from frame rate, _nSamples < 0 -> whole buffer")] 
+	HRESULT BufferFrameFill( [in] BSTR _bsLine, [in] IMFFrame* _pFrame, [in,out] long* _plSamples, [in] BSTR _bsChannelsList );
+
+	[helpstring("Mix audio from buffer with specified frame, the number of samples retreived from specified frame. Note: The audio could be insufficient -> in this case use two lines mixing.")] 
+	HRESULT BufferFrameMix( [in] BSTR _bsLineFrom, [in] IMFFrame* _pFrameTo, [out] long* _plSamplesMix, 
+		[in] double _dblGainFromStartDb, [in] double _dblGainFromEndDb,
+		[in] BSTR _bsChannelsListIn, [in] BSTR _bsChannelsListOut );
+
+	[helpstring("Append audio channels from buffer to specified frame, the number of samples retreived from specified frame")] 
+	HRESULT BufferFrameChannelsAppend( [in] BSTR _bsLine, [in] IMFFrame* _pFrame, [in,out] long* _plSamplesAppend, [in] BSTR _bsChannelsList );
+
+	[helpstring("Mix audio from buffer lines.")] 
+	HRESULT BufferLinesMix( [in] BSTR _bsLineFrom, [in] BSTR _bsLineTo, [in,out] long* _plSamplesMix, 
+		[in] double _dblGainFromStartDb, [in] double _dblGainFromEndDb, 
+		[in] double _dblGainToStartDb, [in] double _dblGainToEndDb, 
+		[in] BSTR _bsChannelsListIn, [in] BSTR _bsChannelsListOut );
+
+	[helpstring("Remove line from buffer.")] 
+	HRESULT BufferLinesRemove( [in] BSTR _bsLine );
+
+	[helpstring("Remove audio data from buffer")] 
+	HRESULT BufferRemove( [in] BSTR _bsLine, [in,out] long* _plSamples );
+
+	[helpstring("Put audio data to buffer, also correct audio data by time (add silence or skip data), for planar format specify _cbAudioPlane: -1 auto size (from number of samples), 0 - interleaved")] 
+	HRESULT BufferPutPtrEx( [in] BSTR _bsLine, [in] REFERENCE_TIME _rtTime, [in] M_AUD_PROPS* _pAudProps, [in] long _lSamples, [in] LONGLONG _pbAudio, [in] int _cbAudioPlane, [in] BSTR _bsChannelsList );
+
+	[helpstring("Get audio data from buffer, For planar format specify _cbAudioPlane: -1 auto size (from number of samples), 0 - interleaved\n"
+		"Note: if *_ppAudio is NULL -> allocate internal buffer, else copy to specified buffer.")] 
+	HRESULT BufferGet( [in] BSTR _bsLine, [in,out] long* _plSamples, [in,out] LONGLONG* _ppbAudio, [in] int _cbAudioPlane, [in] BSTR _bsChannelsList );
+
+	[helpstring("Enable audio buffer times watching (e.g. for BufferFramePut(), BufferFrameFill() ) and set max differnce for times (if zero -> ONLY breaks used)")] 
+	HRESULT BufferTimesEnable( [in] BSTR _bsLine, [in] BOOL _bEnable, [in] REFERENCE_TIME _prtMinDiff, [in] REFERENCE_TIME _prtMaxDiff );
+
+	[helpstring("Enable audio buffer times watching (e.g. for BufferFramePut(), BufferFrameFill() ) and set max differnce for times (if zero -> ONLY breaks used)")] 
+	HRESULT BufferTimesIsEnabled( [in] BSTR _bsLine, [out] BOOL* _pbEnabled, [out] REFERENCE_TIME* _prtMinDiff, [out] REFERENCE_TIME* _prtMaxDiff );
+
+	[helpstring("Get audio buffer times (if have)")] 
+	HRESULT BufferTimesGet( [in] BSTR _bsLine, [out] REFERENCE_TIME* _prtStartTime, [out] REFERENCE_TIME* _prtEndTime );
+
+	[helpstring("Set audio buffer start/end time (remove or add audio if needed) Note: The rtEndTime ONLY for minimum time, if buffer end > ignored.")] 
+	HRESULT BufferTimesSet( [in] BSTR _bsLine, [in] REFERENCE_TIME _rtStartTime, [in] REFERENCE_TIME _rtMinEndTime );
+
+};
+
+
+[
+	object,
+	uuid(B22982B1-E0D5-4977-847D-868F5F0BB90F),
+	helpstring("IMFConverter interface"),
+	pointer_default(unique)
+]
+interface IMFConverter : IUnknown
+{
+	[helpstring("Convert frame (video res, rate, audio format, etc.)")] 
+	HRESULT ConverterFrameConvert( [in] BSTR _bsLine, [in] IMFFrame* _pFrameIn, [in] M_AV_PROPS* _pAVPropsOut, [out] IMFFrame** _ppFrameOut, [out] int* _pnFramesRest, [in] BSTR _bsPropsList );
+
+	[helpstring("Reset converter/transition - make this call after conversion of before start frame-rate conversion.")] 
+	HRESULT ConverterReset( [in] BSTR _bsLine );
+};
+
+
+[
+	object,
+	uuid(B22982B7-E0D5-4977-847D-868F5F0BB90F),
+	helpstring("IMFTransition interface"),
+	pointer_default(unique)
+]
+interface IMFTransition : IUnknown
+{
+	[helpstring("Make transition between frames")] 
+	HRESULT TransitionMake( [in] BSTR _bsLine, [in] IMFFrame* _pFrameFrom, [in] IMFFrame* _pFrameTo, [in] double _dblPos, [out] IMFFrame** _ppFrameTrans, [in] BSTR _bsTransition, [in] BSTR _bsPropsList );
+
+	[helpstring("Reset converter/transition - make this call after conversion of before start frame-rate conversion.")] 
+	HRESULT TransitionReset( [in] BSTR _bsLine );
+};
+
+cpp_quote("#ifndef MFSOURCE_DEFINED")
+cpp_quote("#define MFSOURCE_DEFINED")
+
+[
+	object,
+	uuid(CD799B77-3FD4-4237-92D4-D187B588D999),
+	helpstring("IMFSource interface"),
+	pointer_default(unique)
+]
+interface IMFSource : IUnknown
+{
+	[helpstring("Get a/v props")] 
+	HRESULT SourceAVPropsGet( [out] M_AV_PROPS* _pAVProps );
+
+	[helpstring("Get video frame from file or live source (note: use negative time for get the next frame)")] 
+	HRESULT SourceFrameGet( [in] REFERENCE_TIME _rtMaxWait, [out] IMFFrame** _ppFrame, [in] BSTR _bsHints );
+
+	[helpstring("Get video frame from file or live source (note: use negative time for get the next frame)")] 
+	HRESULT SourceFrameConvertedGet( [in] M_AV_PROPS* _pAVPropsOut, [in] REFERENCE_TIME _rtMaxWait, [out] IMFFrame** _ppFrame, [in] BSTR _bsHints );
+
+	[helpstring("Get video frame from file or live source (note: use negative time for get the next frame, for live sources time is ignored)")] 
+	HRESULT SourceFrameGetByTime( [in] double _dblTimeSec, [in] REFERENCE_TIME _rtMaxWait, [out] IMFFrame** _ppFrame, [in] BSTR _bsHints );
+
+	[helpstring("Get video frame from file or live source (note: use negative time for get the next frame, for live sources frame number is ignored)")] 
+	HRESULT SourceFrameGetByNumber( [in] int _nFrameNo, [in] REFERENCE_TIME _rtMaxWait, [out] IMFFrame** _ppFrame, [in] BSTR _bsHints );
+
+	[helpstring("Get video frame from file or live source (note: use negative time for get the next frame, for live sources time is ignored)")] 
+	HRESULT SourceFrameConvertedGetByTime( [in] M_AV_PROPS* _pAVPropsOut, [in] double _dblTimeSec, [in] REFERENCE_TIME _rtMaxWait, [out] IMFFrame** _ppFrame, [in] BSTR _bsHints );
+
+	[helpstring("Get video frame from file or live source (note: use negative time for get the next frame, for live sources frame number is ignored)")] 
+	HRESULT SourceFrameConvertedGetByNumber( [in] M_AV_PROPS* _pAVPropsOut, [in] int _nFrameNo, [in] REFERENCE_TIME _rtMaxWait, [out] IMFFrame** _ppFrame, [in] BSTR _bsHints );
+};
+
+cpp_quote("#endif // MFSOURCE_DEFINED")
+
+[
+	object,
+	uuid(CD799B78-3FD4-4237-92D4-D187B588D999),
+	helpstring("IMFSource interface"),
+	pointer_default(unique)
+]
+interface IMFSourceVB6 : IUnknown
+{
+	[helpstring("Get video frame from file or live source (note: use negative time for get the next frame, for live sources time is ignored)")] 
+	HRESULT SourceFrameConvertedGetByTimeVB6( [in] M_AV_PROPS* _pAVPropsOut, [in] double _dblTimeSec, [in] int _nMaxWaitMsec, [out] IMFFrame** _ppFrame, [in] BSTR _bsHints );
+}
+
+cpp_quote("#ifndef MFREADER_DEFINED")
+cpp_quote("#define MFREADER_DEFINED")
+
+[
+	object,
+	uuid(10DB43C6-89AF-4CD2-90A4-FB91B32DB3E0),
+	pointer_default(unique)
+]
+interface IMFReader : IMFSource
+{
+	[helpstring("Open")] 
+	HRESULT ReaderOpen( [in] BSTR _bsPath, [in] BSTR _bsPropsList );
+
+	[helpstring("GetDuration")] 
+	HRESULT ReaderDurationGet( [out] double* _pdblDuration );
+
+	[helpstring("Get opened file name")] 
+	HRESULT ReaderNameGet( [out] BSTR* _pbsFileName );
+
+	[helpstring("Abort")] 
+	HRESULT ReaderAbort();
+
+	[helpstring("Close")] 
+	HRESULT ReaderClose();
+};
+
+cpp_quote("#endif // MFREADER_DEFINED")
+
+[
+		object,
+		uuid(10DB43D6-89AF-4CD2-90A4-FB91B32DB3E0),
+		helpstring("IMFDevice Interface - implemented by live source and renderer sink"),
+		pointer_default(unique)
+]
+interface IMFDevice : IUnknown
+{
+	[helpstring("Get specified devices count")] 
+	HRESULT DeviceGetCount( [in] eMFDeviceType _eDevType, [out] int* _pnCount );
+
+	[helpstring("Get device name by index")] 
+	HRESULT DeviceGetByIndex( [in] eMFDeviceType _eDevType, [in] int _nIndex, [out] BSTR* _pbsName, [out] BOOL* _pbBusy );
+
+	[helpstring("Set working device")]  // _bsParam='line-in=sdi keying=external'  PropsOptionGetCount( "line-in" ) ... 
+	HRESULT DeviceSet( [in] eMFDeviceType _eDevType, [in] int  _nIndex, [in] BSTR _bsParam );
+
+	[helpstring("Get currently set device")] 
+	HRESULT DeviceGet( [in] eMFDeviceType _eDevType, [out] int* _pnIndex, [out] BSTR* _pbsName );
+
+	[helpstring("Show device properties")] 
+	HRESULT DeviceShowProps( [in] eMFDeviceType _eDevType, [in] BSTR _bsPropsType, [in] LONGLONG _lWndHandle );
+
+	[helpstring("Open specified device and start capturing.")] 
+	HRESULT DeviceOpen( [in] BSTR _bsDeviceConfig, [in] BSTR _bsPropsList );
+
+	[helpstring("Stop and close specified device")] 
+	HRESULT DeviceClose();
+
+	[helpstring("Get internal component interface - work only for DirectShow or Blackmagic devices. Note: device_sharing SHOULD BE DISABLED for use this calls.")] 
+	HRESULT DeviceGetInternal( [in] eMFDeviceType _eDevType, [out] IUnknown** _ppObject );
+};
+
+[
+	object,
+	uuid(10DB4AC7-89AF-4CD2-90A4-FB91B32DB3E0),
+	helpstring("IMFWriter Interface - for select parameters from pre-defined list"),
+	pointer_default(unique)
+]
+interface IMFWriter : IMFReceiver
+{
+	[helpstring("Get specified options (e.g. formats, codecs, devices, etc.) count (the first parameter is type returned via ConfigTypesGetByIndex()")] 
+	HRESULT WriterOptionGetCount( [in] eMFWriterOption _eType, [out] int* _pnCount );
+
+	[helpstring("Get specified options (e.g. formats, codecs, devices, etc.) by index")] 
+	HRESULT WriterOptionGetByIndex( [in] eMFWriterOption _eType, [in] int _nIndex, [out] BSTR* _pbsShortName, [out] BSTR* _pbsLongName );
+
+	[helpstring("Set specified options (e.g. formats, codecs, devices, etc.) and return interface for config properties."
+		"Note: The underlined option and types count could be changed. (need reenum via ConfigTypesGetCount() / ConfigTypesGetByIndex()")] 
+	HRESULT WriterOptionSetByIndex( [in] eMFWriterOption _eType, [in] int _nIndex, [out] IMFProps** _ppProps );
+
+	[helpstring("Set specified options (e.g. formats, codecs, devices, etc.) and return interface for config properties."
+		"Note: The underlined option and types count could be changed. (need reenum via ConfigTypesGetCount() / ConfigTypesGetByIndex()")] 
+	HRESULT WriterOptionSet( [in] eMFWriterOption _eType, [in] BSTR _bsName, [out] IMFProps** _ppProps );
+
+	[helpstring("Get specified options (e.g. formats, codecs, devices, etc.)")] 
+	HRESULT WriterOptionGet( [in] eMFWriterOption _eType, [out] BSTR* _pbsName, [out] IMFProps** _ppProps );
+
+	[helpstring("Set target file name and option list")] 
+	HRESULT WriterSet( [in] BSTR _bsTargetPath, [in] BOOL _bResetOption, [in] BSTR _bsOptionsList );
+
+	[helpstring("Get target file name and current options list")] 
+	HRESULT WriterGet( [out] BSTR* _pbsTargetPath, [out] BSTR* _pbsOptionsList );
+
+	[helpstring("Close stream/target file")] 
+	HRESULT WriterClose( [in] BOOL _bAsync );
+};
+
+
+
+[
+	object,
+	uuid(04FBCF02-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFSplitter : IUnknown
+{
+	[helpstring("Open specified file or network stream")] 
+	HRESULT SplitterOpen( [in] BSTR _bsFilePath, [in] BSTR _bsProps, [out] int* _pnStreamsCount );
+
+	[helpstring("Open specified file or network stream")] 
+	HRESULT SplitterInfoGet( [out] BSTR* _pbsFilePath, [out] BSTR* _pbsXMLInfo, [out] int* _pnStreamsCount, [out] REFERENCE_TIME* _prtTotalDuration );
+
+	[helpstring("Open specified file or network stream")] 
+	HRESULT SplitterStreamInfoGet( [in] int _nStream, [out] M_STREAM_INFO* _pStreamInfo, [out] BSTR* _pbsStreamXMLInfo );
+
+	[helpstring("Begin reading specified streams")] 
+	HRESULT SplitterBeginSegment( [in] REFERENCE_TIME _rtSegmentStart, [in] BSTR _bsHints );
+
+	[helpstring("Get packet from specified stream (or from all specified streams)")] 
+	HRESULT SplitterPacketGet( [in] int _nStreamIdx, [out] IMFPacket** _ppPacket, [in] BSTR _bsHints );
+
+	[helpstring("Stop reading streams")] 
+	HRESULT SplitterStop();
+
+	[helpstring("Close splitter")] 
+	HRESULT SplitterClose();
+};
+
+
+
+[
+	object,
+	uuid(04FBCF79-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFDecoder : IUnknown
+{
+	[helpstring("Check for supported format (optionally with data packet)")] 
+	HRESULT DecodeIsSupported( [in] M_STREAM_INFO* _pStreamInfo, [in] IMFPacket* _pMFPacket, [out] BOOL* _pbSupported );
+
+	[helpstring("Decode specified packet (Audio/Video), and optionally convert it to output props.")] 
+	HRESULT DecodePacket( [in] IMFPacket* _pMFPacket, [in] REFERENCE_TIME _rtSegmentStart, [in] M_AV_PROPS* _pAVPropsOut, [out] IMFFrame** _ppFrame, [in] BSTR _bsHints );
+
+// 	[helpstring("Put specified packet (Audio/Video) into decoder")] 
+// 	HRESULT DecodePacketPut( [in] IMFPacket* _pMFPacket, [in] REFERENCE_TIME _rtSegmentStart, [in] BSTR _bsHints );
+// 
+// 	[helpstring("Decode specified packet (Audio/Video), and optionally convert it to output props.")] 
+// 	HRESULT DecodeFrameGet( [in] M_AV_PROPS* _pAVPropsOut, [in] [out] IMFFrame** _ppFrame, [in] BSTR _bsHints )
+
+	[helpstring("Decode audio and put into audio buffer")] 
+	HRESULT DecodeAudio( [in] IMFPacket* _pMFPacket, [in] REFERENCE_TIME _rtSegmentStart, [in] IMFAudioBuffer* _pAudioBuffer, [out] long* _plSamplesDecode, [in] BSTR _bsHints );
+
+	[helpstring("Close decoder")] 
+	HRESULT DecodeClose();
+};
+
+[
+	object,
+	uuid(04FBCF23-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFMuxer : IUnknown
+{
+	[helpstring("Set muxer destimation file or network stream")] 
+	HRESULT MuxerSet( [in] BSTR _bsFilePath, [in] BSTR _bsProps );
+
+	[helpstring("Add stream to muxer (ypu can specify input stream index via 'stream_idx' props, if this case MuxerPacketPut() could be with -1 stream index.")] 
+	HRESULT MuxerStreamAdd( [in] M_STREAM_INFO* _pStreamInfo, [in] BSTR _bsProps, [out] int* _pnStreamIdx );
+
+	[helpstring("Get specified stream info (e.g. if certain formats support only fixed rate/size etc.)")] 
+	HRESULT MuxerStreamInfoGet( [in] int _nStreamIdx, [out] M_STREAM_INFO* _pStreamInfo, [out] BSTR* _pbsProps );
+
+	[helpstring("Write packet (use first packet's M_STREAM_INFO for config muxer), if 'stream_idx' specified during MuxerStreamAdd() than _nStreamIdx could be -1")]
+	HRESULT MuxerPacketPut( [in] int _nStreamIdx, [in] IMFPacket* _pPacket, [in] BSTR _bsHints );
+
+	[helpstring("Close muxer")] 
+	HRESULT MuxerClose();
+};
+
+[
+	object,
+	uuid(04FBCF26-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFEncoder : IUnknown
+{
+	[helpstring("Set encoder parameters")] 
+	HRESULT EncodeCodecSet( [in] eMFMediaType _eCodecType, [in] BSTR _bsConfigParams );
+
+	[helpstring("Encode specified frame (Audio/Video), convert it to output props (if specified) and optionally return packet.")] 
+	HRESULT EncodeFramePut( [in] IMFFrame* _pFrame, [in] M_AV_PROPS* _pAVPropsOut, [out] IMFPacket** _ppPacket, [in] BSTR _bsHints );
+
+	[helpstring("Get encoded packet")] 
+	HRESULT EncodePacketsGet( [out] IMFPacket** _ppPacket, [out] int* _pnReadyPackets, [in] REFERENCE_TIME _rtMaxWaitTime, [in] BSTR _bsHints );
+
+// 	[helpstring("Get stream info for encoder.")] 
+// 	HRESULT EncodeStreamInfoGet( [out] M_STREAM_INFO* _pStmInfo, [out] BSTR* _pbsConfig );
+
+	[helpstring("Close encoder")] 
+	HRESULT EncodeClose();
+};
+
+
+
+
+
+//	MConfig objConfig = new MConfig();
+//	objConfig.ConfigSetAll( format='mxf' video::codec='q264' video::b='10M' video::g='64' video::bf='8' video::preset=high_quality );
+
+// WriterNameSet(CComBSTR(L"D:\\!Temp\\NV264.mxf"), CComBSTR("format='mxf' video::codec='q264' video::b='10M' video::g='64' video::bf='8' video::preset=high_quality") ); 
+// WriterNameSetConfig(CComBSTR(L"D:\\!Temp\\NV264.mxf"), objConfig ); 
+// 
+// WriterOptionSet( eMFWO_Video, "n264", out pProps );
+// WriterOptionGet( eMFWO_Video, out sVideo, out pProps );
+
+//////////////////////////////////////////////////////////////////////////
+// Internal interfaces
+// 
+
+[
+	object,
+	uuid(CD799A77-3FD4-4237-92D4-D187B588D999),
+	helpstring("IMFSource_I interface"),
+	pointer_default(unique)
+]
+interface IMFSource_I : IUnknown
+{
+	HRESULT MFSourceFrameGet( [out] IMFFrame** _ppFrame, [in] REFERENCE_TIME _rtMaxWaitTime, [in] BSTR _bsPropsList );
+
+	HRESULT MFSourceFrameGetEx( [in,out] LONGLONG* _plReaderID, [out] IMFFrame** _ppFrame, [in] REFERENCE_TIME _rtMaxWaitTime, [in] BSTR _bsPropsList );
+
+	HRESULT MFSourceInit( [in,out] LONGLONG* _plUserData );
+
+	HRESULT MFSourceClose( [in] LONGLONG _lUserData );
+
+	HRESULT MFSourceRefAdd( [in] DWORD _dwProcessID );
+
+	HRESULT MFSourceRefRemove( [in] DWORD _dwProcessID );
+
+	HRESULT MFSourceHaveRefs( [out] LONGLONG* _phWaitHandle );
+
+	HRESULT MFSourcePropsGet( [out] M_AV_PROPS* _pAVProps );
+};
+
+
+[
+	uuid(927771C8-EA18-45C7-B8C1-5B2CC1B531DE),
+	version(1.7),
+	helpstring("MFormats 1.7 Type Library")
+]
+library MFORMATSLib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	// Notification interface 
+	[
+		uuid(4F365161-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMEvents Interface")
+	]
+	dispinterface IMEvents
+	{
+		properties:
+		methods:
+		// Called for each input sample (frame), BEFORE items will be overlayed.
+		// Note: This method is SYNC, thus the video stream blocked until this method return	
+		[id(1), helpstring("Called if some events occurs. See events list for details."
+							"Note: This method is SYNC so the video stream is blocked while this method is called")] 
+		HRESULT OnEvent(
+						// Channel ID
+						[in] BSTR bsName,
+						//Event name
+						[in] BSTR bsEventName, 
+						//Event param
+						[in] BSTR bsEventParam,
+						//Object - e.g. object what raise the event (see events list for details)
+						[in] IUnknown* pEventObject);
+
+		// Called for each input sample (frame), BEFORE items will be overlayed.
+		// Note: This method is SYNC, thus the video stream blocked until this method return	
+		[id(2), helpstring("Called for each input/output sample (frame)." 
+						"Note: This method is SYNC so the video stream is blocked while this method is called")] 
+		HRESULT OnFrame(
+						[in] BSTR bsName,
+						// MFrame object
+						[in] IUnknown* pMFrame );
+
+	};
+
+	// Notification interface 
+	[
+		uuid(4F365171-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMEventsEvent Interface")
+	]
+	dispinterface IMEventsEvent
+	{
+		properties:
+		methods:
+	
+		// Called for each input sample (frame), BEFORE items will be overlayed.
+		// Note: 
+		// - If this method is SYNC (on_event.sync=true), the video stream blocked until this method return	
+		// - In C#/.Net you have to relase COM pointer via Marshal.ReleaseComObject(pEventObject);
+		[id(1), helpstring("Called if some events occurs. See events list for details."
+							"Note: This method is SYNC so the video stream is blocked while this method is called")] 
+		HRESULT OnEventSafe(
+						// Channel ID
+						[in] BSTR bsChannelID,
+						//Event name
+						[in] BSTR bsEventName, 
+						//Event param
+						[in] BSTR bsEventParam,
+						//Object - e.g. object what raise the event (see events list for details)
+						[in] IUnknown* pEventObject);
+
+	};
+
+	// Notification interface 
+	[
+		uuid(4F365172-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMEventsFrame Interface")
+	]
+	dispinterface IMEventsFrame
+	{
+		properties:
+		methods:
+		// Called for each input sample (frame), BEFORE items will be overlayed.
+		// Note: 
+		// - By default the pMFrame contain ONLY time and props, for have access to A/V data use on_frame.data=true
+		// - If this method is SYNC (on_frame.sync=true), thus the video stream blocked until this method return	
+		// - In C#/.Net you have to relase COM pointer via Marshal.ReleaseComObject(pMFrame);
+		[id(1), helpstring("Called for each input/output sample (frame)." 
+						"Note: This method is SYNC so the video stream is blocked while this method is called")] 
+		HRESULT OnFrameSafe(
+						[in] BSTR bsChannelID,
+						// MFrame object
+						[in] IUnknown* pMFrame );
+
+	};
+
+	[
+		uuid(4F365060-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("MFFrame Class")
+	]
+	coclass MFFrame
+	{
+		[default] interface IMFFrame;
+		interface IMFSideData;
+	};
+
+	[
+		uuid(4F365177-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("MFFactory Class")
+	]
+	coclass MFFactory
+	{
+		[default] interface IMFFactory;
+		interface IMFProcess; // For have interface in TLB
+		interface IMFBuffersAllocator;
+		interface IMFSideData;
+		interface IMSenders;
+		interface IMFProps;
+		interface IMProps; // For MSink info
+		interface IMFConfig;
+	};
+
+	[
+		uuid(0792B96A-E4CB-4140-B848-EE96C6660837),
+		helpstring("MFAudioBuffer Class")
+	]
+	coclass MFAudioBuffer
+	{
+		[default] interface IMFAudioBuffer;
+	};
+
+	[
+		uuid(0792B97B-E4CB-4140-B848-EE96C6660837),
+		helpstring("MFConverter")
+	]
+	coclass MFConverter
+	{
+		[default] interface IMFConverter;
+		interface IMFTransition;
+	};
+
+	[
+		uuid(49859777-08F5-4C7A-B439-3255A8A8E9E4),
+		helpstring("MFPreview Class")
+	]
+	coclass MFPreview
+	{
+		[default] interface IMPreview;
+		[default, source] dispinterface IMEventsEvent;
+		interface IMFReceiver;
+		interface IMFReceiverVB6;
+		interface IMFProps;		
+		interface IMFObject;
+	};
+
+	[
+		uuid(C08A796D-5CCF-4251-B22F-27AAA7ECABF3),		
+		helpstring("MFReader Class")
+	]
+	coclass MFReader
+	{
+		[default] interface IMFReader;
+		interface IMFSource;
+		interface IMFProps;
+		interface IMFSourceVB6; 
+		interface IMSenders;
+	};
+
+	[
+		uuid(C08A797D-5CCF-4251-B22F-27AAA7ECABF3),		
+		helpstring("MFRenderer Class")
+	]
+	coclass MFRenderer
+	{
+		[default] interface IMFDevice;
+		interface IMFReceiver;
+		interface IMFReceiverVB6;
+		interface IMFFormat;
+		interface IMFProps;
+	};
+
+	[
+		uuid(C08A164D-5CCF-4251-B22F-27AAA7ECABF3),		
+		helpstring("MFWriter Class")
+	]
+	coclass MFWriter
+	{
+		[default] interface IMFWriter;
+		[default, source] dispinterface IMEventsEvent;
+		interface IMFReceiver;
+		interface IMFReceiverVB6;
+		interface IMFFormat;
+		interface IMFProps;
+		interface IMFObject;
+	};
+
+	[
+		uuid(C08B164D-5CCF-4251-B22F-27AAA7ECABF3),		
+		helpstring("MFSink Class")
+	]
+	coclass MFSink
+	{
+		[default] interface IMFSink;
+		interface IMFReceiver;
+		interface IMFReceiverVB6;
+		interface IMFProps;
+	};
+
+	[
+		uuid(C08A797F-5CCF-4251-B22F-27AAA7ECABF3),		
+		helpstring("MFLive Class")
+	]
+	coclass MFLive
+	{
+		[default] interface IMFDevice;
+		[default, source] dispinterface IMEventsEvent;
+		interface IMFSource;
+		interface IMFFormat;
+		interface IMFProps;
+		interface IMFSourceVB6;
+		interface IMFObject;
+	};
+
+	[
+		uuid(C08A798D-5CCF-4251-B22F-27AAA7ECABF3),		
+		helpstring("MFRendererBMD Class")
+	]
+	coclass MFRendererBMD
+	{
+		[default] interface IMFDevice;
+		interface IMFReceiver;
+		interface IMFProps;
+	};
+
+	[
+		uuid(C08A798A-5CCF-4251-B22F-27AAA7ECABF3),		
+		helpstring("MFRendererAJA Class")
+	]
+	coclass MFRendererAJA
+	{
+		[default] interface IMFDevice;
+		interface IMFReceiver;
+		interface IMFProps;
+	};
+
+	
+	[
+		uuid(40CD2744-06D8-4D57-ACD9-E1D523660AD4),
+		helpstring("MDelay Class")
+	]
+	coclass MDelay
+	{
+		[default] interface IMFProcess;
+		interface IMFProps;
+	};
+
+	[
+		uuid(B9E821B5-D77D-4B28-B13E-62C0235F8C5C),
+		helpstring("MWebRTC Class")
+	]
+	coclass MWebRTC
+	{
+		[default] interface IMWebRTC;
+		[default, source] dispinterface IMEventsEvent;
+		[source] dispinterface IMEventsFrame;
+		interface IMFReceiver;
+		interface IMFProps;
+		interface IMFSource;
+	};
+
+ 	[
+ 		uuid(E09BF84E-9028-4448-AD34-8CF08BB45565),
+ 		helpstring("MFSignalingDTMF Class")
+ 	]
+ 	coclass MFSignalingDTMF
+ 	{
+ 		[default] interface IMFSignalingDTMF;
+ 		[default, source] dispinterface IMEventsEvent;
+ 		interface IMFProps;
+		interface IMFProcess;
+ 	};
+
+	[
+		uuid(F587E2D0-20B1-4C47-9586-1202D2447B04),
+		helpstring("MFOverlayHTML Class")
+	]
+	coclass MFOverlayHTML
+	{
+		[default] interface IMFBrowser;
+		[default, source] dispinterface IMEventsEvent;
+		interface IMFProps;
+		interface IMFProcess;
+		interface IMFObject;
+	};	
+
+	[
+		uuid(4102E84B-B00A-4351-B4A2-FED0C3FFDC86),
+		helpstring("MCCDisplay Class")
+	]
+	coclass MCCDisplay
+	{
+		[default] interface IMCCDisplay;
+		interface IMFProps;
+		interface IMFProcess;
+	};
+
+	[
+		uuid(8D54BB99-D639-4336-9C3A-17F2D0EAAFA0),
+		helpstring("CoMColors Class")
+	]
+	coclass CoMColors
+	{
+		[default] interface IMColors;
+		interface IMFProcess;
+	};
+
+
+	[
+		uuid(8D54AB24-D639-4336-9C3A-17F2D0EAAFA0),
+		helpstring("MFSideData Class")
+	]
+	coclass MFSideData
+	{
+		[default] interface IMFSideData;
+	};
+
+	[
+		uuid(8D54AB26-D639-4336-9C3A-17F2D0EAAFA0),
+		helpstring("MFPipe Class")
+	]
+	coclass MFPipe
+	{
+		[default] interface IMFPipe;
+		interface IMFProps;
+		interface IMFSideData;
+	};
+};

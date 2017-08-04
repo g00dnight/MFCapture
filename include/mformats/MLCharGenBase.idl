@@ -1,0 +1,1839 @@
+//////////////////////////////////////////////////////////////////////////
+// MLCharGenBase.idl : IDL source for MLCharGen interfaces
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+// This file will be processed by the MIDL tool to
+// produce the type library (MLCharGen.tlb) and marshalling code.
+
+// Simple macros for define ARGB32 colors
+cpp_quote( "#ifndef RGBA" )
+cpp_quote( "#define RGBA(r,g,b, alpha) ((COLORREF)( ((DWORD)r & 0xFF)|(((DWORD)g & 0xFF)<<8)|(((DWORD)b & 0xFF)<<16)|(((DWORD)alpha & 0xFF)<<24) ) )" )
+cpp_quote( "#endif" )
+
+cpp_quote( "#ifndef GetAlphaValue" )
+cpp_quote( "#define GetAlphaValue(argb)      (LOBYTE(((DWORD)(argb))>>24))" )
+cpp_quote( "#endif" )
+
+// Playing mode
+typedef enum eCG_ItemType
+{
+	// The text string
+	eCGIT_Empty,				
+	// The text string
+	eCGIT_Text,				
+	// Flash clip
+	eCGIT_Flash,			
+	// Image (with or w/o alpha)
+	eCGIT_Image,			
+	// Graphics (e.g. rects, circles, lines, etc.)
+	eCGIT_Graphics,
+	// Media file (with or w/o alpha)
+	eCGIT_MediaFile,
+
+	// The group of CG items flag (also the group with empty substrate)
+	eCGIT_Group  = 0x100,
+
+	// Group with text substrate
+	eCGIT_Text_Group,				
+	// Group with flash clip substrate 
+	eCGIT_Flash_Group,			
+	// Group with image substrate 
+	eCGIT_Image_Group,			
+	// Group with graphical substrate 
+	eCGIT_Graphics_Group,
+
+	// The reference for CG item flag
+	eCGIT_Reference = 0x200,
+
+	// The reference to the text string
+	eCGIT_Text_Reference,				
+	// The reference to the Flash clip
+	eCGIT_Flash_Reference,			
+	// The reference to the Image (with or w/o alpha)
+	eCGIT_Image_Reference,			
+	// The reference to the  Graphics (e.g. rects, circles, lines, etc.)
+	eCGIT_Graphics_Reference,
+} eCG_ItemType;
+
+// Playing mode
+typedef enum eCG_PlayingMode
+{
+	// Loop playing mode (default)
+	eCGPM_Loop,				
+	// Play item one time and show last frame
+	eCGPM_OneTime,			
+	// Play item one time, hide after playing, if show this item again, will be rewind
+	eCGPM_OneTime_n_Hide,	
+} eCG_PlayingMode;
+
+cpp_quote("#ifndef CG_SCALE_ALIGN_DEFINED")
+cpp_quote("#define CG_SCALE_ALIGN_DEFINED")
+
+// Scale mode
+typedef enum eCG_Scale
+{
+	// Scale item with maintain AR (default) for fit into output size
+	eCGS_FitAR,	
+	// Show all item
+	eCGS_ExactFit,	
+	// No scaling (only AR correct if pixel AR set)
+	eCGS_NoScale,
+	// Scaling only if size lass when output size
+	eCGS_ShrinkToFit,
+	// Scaling only if size lass when output size (with maintain AR)
+	eCGS_ShrinkToFitAR,
+	// Scale item with maintain AR for cover output size
+	eCGS_CoverAR,
+	// Special text scaling -> Fit in the box for Keep AR, but not scale by height
+	eCGS_Text
+} eCG_Scale;
+
+// Alignment
+// Valid for eCGS_None mode
+typedef enum eCG_Align			
+{
+	// Center
+	eCGA_Center = 0x0,
+	// Left
+	eCGA_Left = 0x1,			
+	// Right
+	eCGA_Right = 0x2,		
+	// Top
+	eCGA_Top = 0x4,			
+	// Left-Top
+	eCGA_TopLeft = 0x5,			
+	// Top-Right
+	eCGA_TopRight = 0x6,			
+	// Bottom
+	eCGA_Bottom = 0x8,			
+	// Left-Bottom
+	eCGA_BottomLeft = 0x9,			
+	// Right-Bottom
+	eCGA_BottomRight = 0xA,
+
+	// Default
+	eCGA_Auto= 0xF, // For item anchor only
+
+	// Next values valid only for screen anchor
+	
+	// The title safe values 
+	eCGA_Safe = 0x10,			
+	// Left
+	eCGA_SafeLeft = 0x11,			
+	// Right
+	eCGA_SafeRight = 0x12,		
+	// Top
+	eCGA_SafeTop = 0x14,			
+	// Left-Top
+	eCGA_SafeTopLeft = 0x15,			
+	// Top-Right
+	eCGA_SafeTopRight = 0x16,			
+	// Bottom
+	eCGA_SafeBottom = 0x18,			
+	// Left-Bottom
+	eCGA_SafeBottomLeft = 0x19,			
+	// Right-Bottom
+	eCGA_SafeBottomRight = 0x1A,
+
+	
+} eCG_Align;
+
+cpp_quote("#endif // CG_SCALE_ALIGN_DEFINED")
+
+// Interlace mode
+typedef enum eCG_Interlace
+{
+	// (default) Auto select interlaced/progressive video and fields order based on VI2 header flags
+    // Note: This value returned by GetVideoInterlace for origin interlace, if input pin not connected.
+	eCGI_Auto,			
+	// Interlaced, field 1 first (usual PAL)
+	eCGI_Field1First,	
+	// Interlaced, field 2 first (usual NTSC)
+	eCGI_Field2First,
+	// Progressive mode 
+	eCGI_Progressive,	
+} eCG_Interlace;
+
+// Character Generator Video Properties structure
+typedef struct CG_VIDEO_PROPS
+{
+	// Frame rate (Only Get)
+	double		  dblFPS;			
+	// Colorspace (Get/Set)
+	// (e.g. 'RGB32', 'RGB24', 'YUY2', 'YV12' etc. , NULL or empty - Any suitable)
+	// Note: You can set the color-space only then graph is stopped
+	BSTR		  bsColorSpace;		
+	// Image width (Only Get)
+	int			  nWidth;			
+	// Image height (Only Get)
+	int			  nHeight;			
+	// Interlace mode (Get/Set)
+	eCG_Interlace eInterlace;		
+	// Aspect Ratio (Get/Set)
+	// Note: (0,0) value mean auto detect the AR (use the VIDEOINFOHEADER2)
+	// Note: (-1,-1) value mean square pixels (the AR = width/height)
+	int			  nApsectX;			
+	// Aspect Ratio (Get/Set)
+	// Note: (0,0) value mean auto detect the AR (use the VIDEOINFOHEADER2)
+	// Note: (-1,-1) value mean square pixels (the AR = width/height)
+	int			  nApsectY;			
+} CG_VIDEO_PROPS;
+
+// Movement mode
+// typedef enum eCG_MovementMode
+// {
+// 	eCGMM_Linear, // (default)
+// 	eCGMM_AccelerationBoth,
+// 	eCGMM_AccelerationStart,
+// 	eCGMM_AccelerationStop,
+// //	eCGMM_HideAndShow
+// } eCG_MovementMode;
+
+// Appear mode
+// typedef enum eCG_AppearMode
+// {
+// 	eCGAM_FadeInOut,
+// 	//eCGAM_Squeeze
+// } eCG_AppearMode;
+
+
+// Structure for item auto blending
+// Note: For negative values - time in frames
+// [OFF (nMsecStart)]
+// [FADE IN (nMsecRamp)][ON (nMsecOn)][FADE OUT (nMsecRamp)][OFF (nMsecOff)]
+// ... (if bRepeat is TRUE)
+// [FADE IN (nMsecRamp)][ON (nMsecOn)][FADE OUT (nMsecRamp)][OFF (nMsecOff)]
+// ... 
+typedef struct CG_AUTO_BLEND
+{
+	// Msec/Frames of time for begin auto-blend 
+	int		nMsecStart;   
+	// Msec/Frames for fade in / fade out
+	int		nMsecRamp;	  
+	// Msec/Frames for displaying items
+	int		nMsecOn;	  
+	// Msec/Frames for not displaying item	
+	int		nMsecOff;	  
+	// Repeat sequence flag
+	BOOL	bRepeat;	  
+	// Rewind item each time when begin sequence 
+	BOOL	bRewind;	  
+
+	// Special cases 
+	// nMsecOn == 0  -> Display till clip reach the end (or infinite if no end e.g. for flash items)
+} CG_AUTO_BLEND;
+
+
+// TODO: Check alignment
+
+// CG item properties
+typedef struct CG_ITEM_PROPS
+{
+	// Position
+	POINT		ptPos;
+	// Item (group) size
+	// Special values: 
+	// szItem = (0,0)  - use original size
+	// szItem = (0,y)  - set X size according to AR
+	// szItem = (x,0)  - set Y size according to AR,
+	// szItem = (-1,-1) - (group only) update group size to cover all group items
+	SIZE		szItem;			
+	// The item content (image/text/flash) indent from item borders.
+	// Note: If item in group -> the view area is decreased by indent size.
+	RECT		rcIndent;
+	// Item type
+	eCG_ItemType	eType;
+	// Alpha [0..255]: 0 - transparent, 255 - solid
+	// Default: nAlpha = 255 - solid
+	int				nAlpha;				
+	// Background color in RGBA format 0xAABBGGRR - use the RGBA() macros for define color
+	// Default: nBackColor = 0 - No Background (100% transparent black)
+	int				nBackColor;		
+	// Smoothness 
+	// [0..16] values valid
+	int				nEdgesSmooth;
+	// Item pixel AR (not work for Flash items)
+	// 0   - Automated (based on screen AR or overridden props - e.g. for PAL 4:3 video the pixel AR is 1.066)
+	// 1.0 - Square pixels
+	// 2.0 - width doubled
+	// 0.5 - half of width
+	double			dblPixelAR;
+
+	// Flags
+
+	// Show item flag
+	// Default TRUE
+	BOOL		bShowItem;		
+
+	// Pause item flag (for flash, image sequences, crawls, rolls )
+	// Default FALSE
+	BOOL		bPauseItem;		
+
+	// Item modes
+
+	// Playing mode (for flash, image sequences, crawls, rolls)
+	// Default eCGPM_Loop
+	eCG_PlayingMode		ePlayingMode;	
+	// Interlacing mode (for smooth animation over interlaced video)
+	// Note: 
+	//	- For interlaced items flash rate ignored 	
+	// Default eCGI_Progressive
+	eCG_Interlace		eInterlace;	
+	// Scaling mode 
+	// Default eCGS_FitAR
+	eCG_Scale			eScale;		
+	// Align mode 
+	// Default eCGA_C (Center)
+	eCG_Align			eAlign;		
+} CG_ITEM_PROPS;
+
+// Appear mode
+typedef enum eCG_TextType
+{
+	//Text
+	eCGTT_Text,
+	//DateTime
+	eCGTT_DateTime,
+	//Timecode
+	eCGTT_Timecode,
+	//Timecode NDF
+	eCGTT_Timecode_NDF,
+	//Frame time
+	eCGTT_FrameTime,
+
+	// The next types available on professional version only
+
+	// Crawl Line 
+//	eCGTT_Crawl,
+	// Roll text
+//	eCGTT_Roll,
+
+	// Can be added only via AddNewItem() with subtitles file (*.srt)
+	eCGTT_Subtitles,
+
+	//Frame number (according to the frame time)
+	eCGTT_FrameNumber,
+	//Frames counter
+	eCGTT_Counter,
+	//Timer
+	eCGTT_Timer,
+	//Stop-watch
+	eCGTT_StopWatch
+} eCG_TextType;
+
+typedef enum eCG_DTFlags
+{
+	// Alignment TOP LEFT (!!! NOT USED ANYMORE, ues CG_ITEM_PROPS::eAlign)
+	eCGDT_TOP_LEFT = 0x00000000,		
+	// Alignment CENTER (!!! NOT USED ANYMORE, ues CG_ITEM_PROPS::eAlign)
+	eCGDT_CENTER = 0x00000001,
+	// Alignment RIGHT (!!! NOT USED ANYMORE, ues CG_ITEM_PROPS::eAlign)
+	eCGDT_RIGHT = 0x00000002,
+	// Alignment VCENTER (!!! NOT USED ANYMORE, ues CG_ITEM_PROPS::eAlign)
+	eCGDT_VCENTER = 0x00000004,
+	// Alignment BOTTOM (!!! NOT USED ANYMORE, ues CG_ITEM_PROPS::eAlign)
+	eCGDT_BOTTOM = 0x00000008,
+
+	// Trimming PATH_ELLIPSIS
+	// For displayed text, replaces characters in the middle of the string with ellipses so that the result fits in the specified rectangle.
+	eCGDT_PATH_ELLIPSIS = 0x00004000,	
+	// Trimming END_ELLIPSIS
+	//For displayed text, if the end of a string does not fit in the rectangle, it is truncated and ellipses are added. If a word that is not at the end of the string goes beyond the limits of the rectangle, it is truncated without ellipses.
+	eCGDT_END_ELLIPSIS	= 0x00008000,
+	// Trimming WORD_ELLIPSIS
+	// Truncates any word that does not fit in the rectangle and adds ellipses.
+	eCGDT_WORD_ELLIPSIS = 0x00040000,	
+	// Trimming CHAR
+	eCGDT_TRIMMING_CHAR = 0x00010000,
+	// Trimming WORD
+	eCGDT_TRIMMING_WORD = 0x00080000,
+	
+	// Other flags
+
+	// Breaks words. Lines are automatically broken between words if a word would extend past the edge of the rectangle specified by the lpRect parameter. A carriage return-line feed sequence also breaks the line.
+	eCGDT_WORDBREAK = 0x00000010,							
+	// Displays text on a single line only. Carriage returns and line feeds do not break the line.
+	eCGDT_SINGLELINE = 0x00000020,
+	// Disable tab in lines. (Note: For set tab-stops use the "text::tab-stop" property, deafult is 8)
+	eCGDT_NO_TAB = 0x00000080,
+	// Layout in right-to-left reading order for bi-directional text when the font selected into the hdc is a Hebrew or Arabic font. The default reading order for all text is left-to-right.
+	eCGDT_RTLREADING	= 0x00020000,
+	// Centers text vertically.
+	eCGDT_VERTICAL		= 0x00200000,
+	// Not measure trailing spaces
+	eCGDT_MEASURE_TRAILING_SPACE = 0x00400000,
+	// Uppper case
+	eCGDT_UPPERCASE = 0x00800000,
+	// Lower case
+	eCGDT_LOWERCASE = 0x01000000,
+	// Flip by Y axis (vertically)
+	eCGDT_FLIP_VERT = 0x04000000,
+	// Flip by X axis (horizontally)
+	eCGDT_FLIP_HORZ = 0x08000000
+} eCG_DTFlags;
+
+// TODO: Check alignment
+
+// Text properties
+typedef struct CG_TEXT_PROPS
+{
+	// The text string
+	BSTR			bsTextString;
+	// Font face (use the Bold, Italic, Underline, StrikeOut words in the face name for specify the corresponding text)
+	BSTR			bsFontFace;
+	// Type of text item (see [[eCG_TextType]] )
+	eCG_TextType		eTextType;
+	// Height of font (in pixels)
+	// Note: The height is estimated, used the font with most close height.
+	int				nFontHeight;
+	// Text color in RGBA format 0xAABBGGRR - use the RGBA() macros for define color
+	int				nTextColor;
+	// Outline color in RGBA format 0xAABBGGRR - use the RGBA() macros for define color
+	int				nOutlineColor;
+	// Draw Text flags (see [[eCG_DTFlags]] )
+	eCG_DTFlags		nDTFlags;
+	// Outline width (in pixels)
+	double			dblOutlineWidth;
+	// Time offset 
+	// for eCGTT_DateTime
+	// in SIGN:HH:MM:SS (0xSGHHMMSS)
+	// 0x10112233 mean 11 hours 22 minutes 33 seconds backward
+	// 0x00112233 mean 11 hours 22 minutes 33 seconds forward
+	// for eCGTT_Timecode 
+	// in HH:MM:SS:FF (0xHHMMSSFF)
+	// 0x11223315 mean 11 hours 22 minutes 33 seconds and 15 frames offset
+	// for eCGTT_Subtitles
+	// offset in milliseconds (with sign)
+	int				nTimeOffset;
+} CG_TEXT_PROPS;
+
+// Item movement
+typedef struct CG_ITEM_MOVEMENT
+{
+	// For CG item crawling - number of pixel for horizontal shift per one frame
+	double		dblXSpeed;		
+	// For CG item crawling - number of pixel for vertical shift per one frame
+	double		dblYSpeed;	
+	
+	// Now used the 'loop' playing mode
+	// 'No offscreen' flag - After item go out of screen it's appear from opposite side
+	// BOOL		bNoOffscreen;	
+} CG_ITEM_MOVEMENT;
+
+// File type - used in [CaptureItemImage]
+typedef enum eCG_FileType
+{
+	eCGFT_BMP32, // BMP 32 (with alpha)
+	eCGFT_PNG,   // PNG (with alpha)
+	eCGFT_GIF,   // GIF (with alpha)
+	eCGFT_JPG,  // TIFF (no alpha)
+	eCGFT_TIFF   // JPG (no alpha)
+} eCG_FileType;
+
+// Remove items from group enum - used in [GroupRemoveAll]
+typedef enum eCG_GroupItemsRemoveType
+{
+	eCGRT_Ungroup,				// Remove items from group (the group and items not removed from GC) - 'Ungroup items'
+	eCGRT_RemoveOnlyGroup,		// Remove only group item (the group items not removed from GC) 
+	eCGRT_RemoveOnlyItems,		// Remove items from group and CG (the group not removed)
+} eCG_GroupItemsRemoveType;
+
+
+//////////////////////////////////////////////////////////////////////////
+// C++ Callback interface
+
+[
+	object,
+	uuid(19E97AA0-BB5A-4446-897A-6A6177AF963E),
+	helpstring("IMLCharGenCallback Interface"),
+	pointer_default(unique)
+]
+interface IMLCharGenCallback : IUnknown
+{
+
+		// Called for each input sample (frame), BEFORE items will be overlayed.
+		// Note: This method is SYNC, thus the video stream blocked until this method return	
+		[helpstring("Called for each input sample (frame), BEFORE items will be overlayed. Note: This method is SYNC, thus the video stream blocked until this method return	")] 
+		HRESULT OnFrame(
+						// Callback cookie
+						[in] LONGLONG llCallbackCookie,
+						//Sample time
+						[in] double dblTime, 
+						//Sample mediatime, -1 if mediatime not set 
+						[in] int nMediaTime, 
+						//Number of input frame
+						[in] int nFrameNum );
+
+		// Called when flash item reach the end
+		// bsItemID - Item cookie
+		[helpstring("Called when flash item or image sequence reach the end")] 
+		HRESULT OnEndOfClip(
+							//Callback cookie
+							[in] LONGLONG llCallbackCookie,
+							//Item ID - unique string, identifying the flash object
+							[in] BSTR bsItemID );
+
+		// Called when transition done (e.g. Fade In or change position)	
+		[helpstring("Called when transition done (e.g. Fade In or change position)")] 
+		HRESULT OnTransitionDone(
+								//Callback cookie
+								[in] LONGLONG llCallbackCookie,
+								//Item ID - unique string, identifying the flash object
+								[in] BSTR bsItemID, 
+								//Item displayed flag
+								[in] VARIANT_BOOL bShow );
+
+		// Calls external method from Action Script.
+		// Call of ExternalInterface.call(methodName:String, [parameter:Object])
+		// should be used.
+		//
+		// Parameters
+		//	bstrMethodName		name of method (methodName)
+		//	bstrParameters		string with parameters. Commas used for divide
+		//						parameters, string parameters wrapped with "",
+		//						spaces between parameters removed.
+		//
+		// Samples:
+		//	Action Script: ExternalInterface.call("Test1", 3.62, "abcd", "efgh");
+		//	bstrMethodName: Test1
+		//	bstrParameters: 3.62,"abcd","efgh"
+		//
+		//	Action Script: ExternalInterface.call("Test2", "string", 12, 3.1415);
+		//	bstrMethodName: Test2
+		//	bstrParameters: "string",12,3.1415
+		//	
+		//	Action Script: ExternalInterface.call("Test3");
+		//	bstrMethodName: Test3
+		//	bstrParameters: NULL
+		[helpstring("Called than external function called from flash."
+					" Call of ExternalInterface.call(methodName:String, [parameter:Object])"
+					" should be used."
+					""
+					" Parameters"
+					"	bstrMethodName		name of method (methodName)"
+					"	bstrParameters		string with parameters. Commas used for divide"
+					"						parameters, string parameters wrapped with ''"
+					"						spaces between parameters removed."
+					""
+					" Samples:"
+					"	Action Script: ExternalInterface.call('Test1', 3.62, 'abcd', 'efgh');"
+					"	bstrMethodName: Test1"
+					"	bstrParameters: 3.62,'abcd','efgh'"
+					""
+					"	Action Script: ExternalInterface.call('Test2', 'string', 12, 3.1415);"
+					"	bstrMethodName: Test2"
+					"	bstrParameters: 'string',12,3.1415"
+					""	
+					"	Action Script: ExternalInterface.call('Test3');"
+					"	bstrMethodName: Test3"
+					"	bstrParameters: NULL")] 
+		HRESULT OnFlashCallback(
+								//Callback cookie
+								[in] LONGLONG llCallbackCookie,
+								//Item ID - unique string, identifying the flash object
+								[in] BSTR bsItemID, 
+								//Name of method (methodName)
+								[in] BSTR bsMethodName,
+								//String with parameters. Commas used for divide 
+								//parameters, string parameters wrapped with "",
+								//spaces between parameters removed.
+								[in] BSTR bsParameters );
+
+		[helpstring("Called when some events occurs (e.g. composition done)")] 
+		HRESULT OnCGEvent(	
+							//Callback cookie
+							[in] LONGLONG llCallbackCookie,
+							//Item or Composition ID - unique string, identifying the CG item or CG composition
+							[in] BSTR bsItemOrCompositionID, 
+							//Event type:
+							//CompositionDisplay
+							//CompositionExit
+							//ScheduleCompositionDisplay
+							//ScheduleCompositionExit
+							//ScheduleItemShow
+							//ScheduleItemHide
+							[in] BSTR bsEventType,
+							//Parameters (intro, show, exit time, layer, params)
+							[in] BSTR bsEventParam );
+	};
+
+	
+// Common interface PS: {4D4C7A00-473F-4AD5-A5C2-428FE0C8E03E}
+[
+	object,
+	uuid(19E97A91-BB5A-4446-897A-6A6177AF963E),
+	helpstring("IMLCharGen Interface"),
+	pointer_default(unique)
+]
+interface IMLCharGen : IUnknown
+{
+	/////////////////////////////////////////////////////////////////////////////////////////
+	// Filter properties methods
+
+	// Extra buffering mode
+	[helpstring("Use extra buffering - useful with Video Renderer connection")] 	
+	HRESULT UseExtraBuffer(
+							//Use extra buffering status value
+							//0 - Trans-in-Place mode
+							//	  Note: The input/output sample may be modified 
+							//1 - Trans-Filter (copy memory) useful for VMR connect 
+							//	  Note: The input sample may be modified 
+							//2 - Trans-Filter (copy memory + not modify input) useful for VMR connect 
+							//	  Note: The input sample NOT modified 
+							[in] int _nUse);
+
+	// Return the extra buffering mode
+	[helpstring("Return the extra buffering mode")] 	
+	HRESULT IsUseExtraBuffer(
+							//Extra buffering mode
+							[out] int* _pnUse);
+
+	[helpstring("Set (override) video properties"
+				"Override video interlace (e.g. for override wrong flags), aspect ratio and colorspace.")] 
+	HRESULT SetVideoProperties(
+								// New video properties
+								[in] CG_VIDEO_PROPS* _pVideoProps );
+
+	// Get Video interlace
+	// Note: If input pin not connected - eCGI_Auto returned as _peOrigin
+	[helpstring("Get video properties" 
+				"Note: If input pin not connected - eCGI_Auto returned as _peOrigin")] 
+	HRESULT GetVideoProperties(
+							// New video properties
+							[out] CG_VIDEO_PROPS* _pVideoPropsSet,
+							// Interlace mode
+							[out] CG_VIDEO_PROPS* _pVideoPropsOrigin );
+
+	
+	// Used for show video on the part of screen, or show only part of input video.
+	// Note: The Z-order of input video / overlayed items, can be specified via [[ChangeItemZOrder]] method,
+	// the video have the 'input-video' string-id
+	[helpstring("Specify the input video modification"
+				"Used for show video on the part of screen, or show only part of input video."
+				"Note: The Z-order of input video / overlayed items, can be specified via [[ChangeItemZOrder]] method,"
+				"the video have the 'input-video' string-id")]
+	HRESULT	SetVideoOutputRect(
+								//Source rectangle - area FROM which source video will be taken
+								[in] RECT* _prcSource, 
+								//Source rectangle - area TO which source video will be placed
+								[in] RECT* _prcTarget, 
+								//Back color value
+								[in] int _crBackColor,
+								//If true - video stream will be placed above the flash
+								//If false - flash will be placed above the video stream
+								[in] BOOL _bTopmostVideo );
+
+	// Return the modification specified via [[SetVideoOutputRect]] method.
+	// Note: The Z-order of input video / overlayed items, can be specified via [[ChangeItemZOrder]] method,
+	// the video have the 'input-video' string-id
+	[helpstring("Get the input video modification"
+				"Return the modification specified via [[SetVideoOutputRect]] method."
+				"Note: The Z-order of input video / overlayed items, can be specified via [[ChangeItemZOrder]] method,"
+				"the video have the 'input-video' string-id")]
+	HRESULT	GetVideoOutputRect(
+								//Source rectangle - area FROM which source video will be taken
+								[out] RECT* _prcSource, 
+								//Source rectangle - area TO which source video will be placed
+								[out] RECT* _prcTarget,
+								//Back color value
+								[out] int* _pcrBackColor,
+								//If true - video stream will be placed above the flash
+								//If false - flash will be placed above the video stream
+								[out] BOOL* _pbTopmostVideo );
+
+	/////////////////////////////////////////////////////////////////////////////////////////
+	// Adding/removing items
+
+	[helpstring("Method for add new image or CG item (the items props can be "
+				"changed by SetItemProps() or other props methods)")]
+	HRESULT AddNewItem(
+						//File Name or item XML description
+					   [in] BSTR _bsFileNameOrItemDesc, 					  
+					   //X position 
+					   [in] double _dblPosX,					   
+					   //Y position 
+					   [in] double _dblPosY,
+					   //Relative position flag
+					   [in] BOOL _bRelativePosAndSize,
+					   //Determines visible state of item on add  (shown or hidden)
+					   [in]	BOOL _bShow,
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+					   	// Note: _pbsItemID can be empty string, in this case unique 
+						//		 ID (like 'item-000') will be generated
+					   [in,out] BSTR* _pbsItemID );
+
+	[helpstring("Method for add new text item (the items props can be "
+				"changed by SetItemProps() or other props methods)")]
+	HRESULT AddNewTextItem(
+					   //The text properties
+					   [in] CG_TEXT_PROPS* _pTextProps, 					  
+					   //X position
+					   [in] double _dblPosX,					   
+					   //Y position
+					   [in] double _dblPosY,
+					   //Relative position
+					   [in] BOOL _bRelativePos,
+					   //Determines visible state of item on add  (shown or hidden)
+					   [in]	BOOL _bShow,
+						// Item ID - unique string, identifying the CG item
+					   	// Note: _bsItemID can be empty string, in this case unique 
+						//		 ID (like 'item-000') will be generated
+					   [in,out] BSTR* _pbsItemID );
+
+	[helpstring("Method for add new image by HBITMAP handle")]
+	HRESULT AddImageByHandle(
+					   //The image handle
+					   [in] LONG _hBitmap, 					  
+					   //X position
+					   [in] double _dblPosX,					   
+					   //Y position
+					   [in] double _dblPosY,
+					   //Relative position
+					   [in] BOOL _bRelativePos,
+					   //Determines visible state of item on add  (shown or hidden)
+					   [in]	BOOL _bShow,
+						// Item ID - unique string, identifying the CG item
+					   	// Note: _bsItemID can be empty string, in this case unique 
+						//		 ID (like 'item-000') will be generated
+					   [in,out] BSTR* _pbsItemID );
+
+	
+	// Remove specified item
+	[helpstring("Remove specified item")]
+	HRESULT	RemoveItem(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID,
+						//Time span in milliseconds for fade-out item
+						//less or below zero -> remove immediate
+						[in] int _nFadeOutMsec );
+
+	// Remove specified item
+	[helpstring("Remove specified item")]
+	HRESULT	RemoveItemWithDelay(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID,
+						//Time span in milliseconds before start show/hide items
+						[in] int _nMsecDelay,
+						//Time span in milliseconds for fade-out item
+						//less or below zero -> remove immediate
+						[in] int _nFadeOutMsec );
+
+	// Clone item - make the same item, or the reference for current item
+	[helpstring("Clone item - make the same item, or the reference for current item")]
+	HRESULT	CloneItem(
+						// Item ID - unique string, identifying the CG item
+						[in] BSTR _bsOriginalItemID,
+						// Make the item reference
+						[in] BOOL _bMakeReference,
+						// Can be empty or zero - in this case the reference item ID 
+						// will be generated automatically 
+						[in,out] BSTR* _pbsNewItemID );
+
+	[helpstring("method ChangeItemID")] 
+	HRESULT ChangeItemID(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//Item New ID - unique string, identifying the CG item
+						[in] BSTR _bsItemNewID );
+
+	/////////////////////////////////////////////////////////////////////////////////////////
+	// For enumerate items & get item information
+
+	// Return the number of overlayed items
+	[helpstring("Return the number of overlayed items")]	
+	HRESULT GetItemsCount(
+						//Number of overlayed items
+						[out] int* _pnItems );
+
+	// Get item string-id by index
+	[helpstring("Get item ID by index")]
+	HRESULT GetItem(
+					//Item index
+					[in] int _nIndex, 
+					// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+					[out] BSTR* _pbsItemID );
+
+	// Get item info (file name & CG_ITEM_PROPS)
+	[helpstring("Get item base properties (file name & CG_ITEM_PROPS)")]
+	HRESULT GetItemBaseProps(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//File Name or XML item description
+						[out] BSTR* _pbsFileNameOrDesc,
+						//Common item properties
+						[out] CG_ITEM_PROPS* _pItemProps);
+
+	// Get item properties
+	[helpstring("Get item properties")]
+	HRESULT GetItemProperties(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						// Item properties name (can be empty or NULL) in this case the 
+						// whole XML item description returned.
+						// Note: Use the :: separator for specify the underlying property
+						// e.f. effects::blur-size or effects::type
+						[in] BSTR _bsPropertyName,
+						// Property value or XML description
+						[out] BSTR* _pbsPropertyDesc );
+
+	[helpstring("Get item original size")]
+	HRESULT GetItemOriginalSize(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//Item original size
+						[out] SIZE* _pSize);
+
+	
+	// Note: The input video have the 'input-video' string-id
+	[helpstring("method ChangeItemZOrder")] 
+	HRESULT ChangeItemZOrder(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							// Change order of items (the items with higher order overlap items with lower order)
+							// _nChange > 0 - swap with greater number (move down)
+							// _nChange < 0 - swap with lower number (move up)
+							[in] int _nChange);
+
+	
+
+	
+	/////////////////////////////////////////////////////////////////////////////////////////
+	// Methods for change item props
+	// Most of methods have _nMsecForChange for make smooth properties changing
+	// Note: For negative _nMsecForChange - the time in frames
+
+	// Set item props 
+	[helpstring("Set item basic props (via CG_ITEM_PROPS structure)")]
+	HRESULT SetItemBaseProps(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//Flash item properties
+						[in] CG_ITEM_PROPS* _pItemInfo, 
+						//Time span in milliseconds for changes to come up
+						[in] int _nMsecForChange );
+
+	// Set item properties
+	// (via this method you can change e.g. the image, item type etc.)
+	[helpstring("Set item properties"
+				"(via this method you can change e.g. the image, item type etc.)")]
+	HRESULT SetItemProperties(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						// Item properties name (can be empty or NULL) in this case the 
+						// whole XML item description returned.
+						// Note: Use the :: separator for specify the underlying property
+						// e.f. effects::blur::size or effects::blur
+						[in] BSTR _bsPropertyName,
+						// Property value or XML description
+						[in] BSTR _bsPropertyValue,
+						// How properties should be changed (valid for some properties only)
+						[in] BSTR _bsChangeType,
+						// Time span in milliseconds for changes to come up (not for all properties)
+						[in] int _nMsecForChange);
+
+	/////////////////////////////////////////////////////////////////////////////////////////
+	// Helpers methods for change some basic properties
+
+	// Method for show/hide item 
+	[helpstring("Method for show/hide item ")]
+	HRESULT	ShowItem(
+					// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+					[in] BSTR _bsItemID, 
+					//Show/hide item 
+					[in] BOOL _bShow, 
+					//Time span in milliseconds for changes to come up
+					[in] int _nMsecForChange );
+
+	// Method for show/hide item 
+	[helpstring("Method for show/hide item with delay")]
+	HRESULT	ShowItemWithDelay(
+					// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+					[in] BSTR _bsItemID, 
+					//Show/hide item 
+					[in] BOOL _bShow, 
+					//Time span in milliseconds before start show/hide items
+					[in] int _nMsecDelay,
+					//Time span in milliseconds for changes to come up
+					[in] int _nMsecForChange );
+
+	// Method for change item position
+	[helpstring("Method for change item position")]
+	HRESULT	SetItemPos(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//X position
+						[in] double _dblPosX,					   
+						//Y position
+						[in] double _dblPosY,
+						//Relative position
+						[in] BOOL _bRelativePos,
+						//Time span in milliseconds for changes to come up
+						[in] int _nMsecForChange );
+
+
+	// Method for change item alpha
+	[helpstring("Method for change item alpha")]
+	HRESULT	SetItemAlpha(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//Alpha value to set
+						[in] int _nNewAlpha, 
+						//Time span in milliseconds for changes to come up
+						[in] int _nMsecForChange );
+
+	
+	// Method for change item size
+	[helpstring("Method for change item size")]
+	HRESULT	SetItemSize(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//Width
+						[in] double _dblSizeX,					   
+						//Height
+						[in] double _dblSizeY,
+						//Relative size 
+						[in] BOOL _bRelativeSize,
+						//Time span in milliseconds for changes to come up
+						[in] int _nMsecForChange );
+
+	// Method for change item background
+	[helpstring("Method for change item background")]
+	HRESULT	SetItemBackground(
+								// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+								[in] BSTR _bsItemID,
+								//Background value
+								[in] int _nBackground, 
+								//Time span in milliseconds for changes to come up
+								[in] int _nMsecForChange );
+
+	[helpstring("Method for set item anchor position (top-left, center, bottom-right etc.)")]
+	HRESULT	SetItemAnchorPos(
+								// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+								[in] BSTR _bsItemID,
+								//The item-relative anchor (e.g. right-bottom corner)
+								//Default: top-left
+								[in] eCG_Align _eItemRelAnchor,
+								//The screen-relative anchor (e.g. right-bottom corner)
+								//Default: top-left
+								[in] eCG_Align _eScreenRelAnchor);
+
+	[helpstring("Method for get item anchor position (top-left, center, bottom-right etc.)")]
+	HRESULT	GetItemAnchorPos(
+								// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+								[in] BSTR _bsItemID,
+								//The item-relative anchor (e.g. right-bottom corner)
+								//Default: top-left
+								[out] eCG_Align* _peItemRelAnchor,
+								//The screen-relative anchor (e.g. right-bottom corner)
+								//Default: top-left
+								[out] eCG_Align* _peScreenRelAnchor);
+
+	// Pause flash animation for specified item
+	[helpstring("Pause flash animation or images sequence for specified item")]
+	HRESULT	PauseItem(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//Pause bool value
+						[in] BOOL _bPause );
+
+	// Rewind flash animation to the begin
+	[helpstring("Rewind flash animation or images sequence to the begin")]
+	HRESULT	RewindItem(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID );
+
+	// Set current frame (like the seek) for specified CG item
+	[helpstring("Set current frame (like the seek) for specified CG item")]
+	HRESULT	SetPlayingFrame(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							//Current frame
+							[in] int _nFrame );
+
+	// Get current frame (like the pos) for specified CG item
+	[helpstring("Get current frame (like the pos) for specified CG item or image sequence")]
+	HRESULT	GetPlayingFrame(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							//Current frame
+							[out] int* _pnFrame,
+							//Image name (valid only for image sequence)
+							[out] BSTR* _bsCurrentImage);
+
+	///////////////////////////////////////////////////////////////////////
+	// Group methods (supporrted only by Pro version)
+
+	// The group of items - the items set what have common properties:
+	// Position, Show/Hide, Alpha, Movement, etc.
+	// If item added into group it's not enumerated via [[GetItemCounts]], [[GetItem]] method.
+	//
+	// Note: If group removed, all items from group also removed
+	[helpstring("Add specified item into group"
+				"The group of items - the items set what have common properties:"
+				"Position, Show/Hide, Alpha, Movement, etc."
+				"If item added into group it's not enumerated via [[GetItemCounts]], [[GetItem]] method."
+				"Note: If group removed, all items from group also removed")]
+	HRESULT	GroupAddItem(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							// Add new item as reference flag
+							[in] BOOL _bAddAsReference,
+							// Group type
+							// Supported types:
+							// NULL, empty or 'default'	- the group is the internal elements union and automatically update the elemets size 
+							//				              and positions if group size chnaged
+							// 'background' - the group have size (and automatically update size) as the internal elememts 
+							//			    (useful for graphical backgrounds for items)
+							// 'view-area'  - used for limit item view area (as the items displayed only inside group), the group items position
+							//				NOT relative to the view-area group
+							// 'text-line'  - all items in group line up into one line, used internal for tickers.
+							// Next types ONLY FOR INTERNAL usage
+							// 'ticker'		- used for tickers, use the TickerAddNew, TickerAddContent for work with tickers
+							[in] BSTR _bsGroupType, 
+							//Item ID - unique string, identifying the group
+							//Note: If group not exist, the new one will be created. _pbsGroupID can be empty string, 
+							//in this case unique ID (like 'group-000') will be generated
+							[in,out] BSTR* _pbsGroupID );
+
+
+	[helpstring("Get number of items in group")]
+	HRESULT	GroupItemsCount(
+							// Item(Group) ID - unique string, identifying the CG item 
+							[in] BSTR _bsGroupID, 
+							// Items count
+							[out] int* _pnItemsCount );
+
+
+	[helpstring("Get number of items in group")]
+	HRESULT	GroupGetItem(
+							//Item(Group) ID - unique string, identifying the CG item
+							[in] BSTR _bsGroupID, 
+							// Item index
+							[in] int _nIndex,
+							// Items ID
+							[out] BSTR* _pbsItemID );
+
+
+	// Note: The item removed from group, not from CG
+	[helpstring("Remove specified item from group")]
+	HRESULT	GroupRemoveItem(
+							//Item(Group) ID - unique string, identifying the CG item
+							[in] BSTR _bsGroupID,
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID );
+
+	// Note: The item removed from group, not from CG
+	[helpstring("Remove all item from group and the group item (optional)")]
+	HRESULT	GroupRemoveAll(
+							//Item(Group) ID - unique string, identifying the CG item
+							[in] BSTR _bsGroupID,
+							//Remove group item flag see [eCG_GroupItemsRemoveType] for details
+							[in] eCG_GroupItemsRemoveType _eRemoveType );
+
+// 	[helpstring("Update group size")]
+// 	HRESULT	GroupUpdateSize(
+// 							//Item(Group) ID - unique string, identifying the CG item
+// 							[in] BSTR _bsGroupID );
+
+	[helpstring("Return the group ID of specified item")]
+	HRESULT	GroupGetItemGroup(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID,
+							//Item(Group) ID - if item ijn group - the group ID returned 
+							[out] BSTR* _pbsGroupID );
+
+
+
+	
+	///////////////////////////////////////////////////////////////////////
+	// Flash related methods
+
+	[helpstring("Get the flash clip information for specified item")]
+	HRESULT	FlashGetClipInfo(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							//Total number of frames in clip
+							[out] int* _pnTotalFrames, 
+							//Clip frame rate
+							[out] double* _pdblFrameRate );
+
+	// Set the flash variable for specified item
+	[helpstring("Set the flash variable for specified item")]
+	HRESULT	FlashSetVariable(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							//Flash variable name
+							[in] BSTR _bsVarName, 
+							//Flash variable value
+							[in] BSTR _bsVarValue );
+
+	// Get the flash variable for specified item
+	[helpstring("Get the flash variable for specified item")]
+	HRESULT	FlashGetVariable(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							//Flash variable name
+							[in] BSTR _bsVarName,
+							//Flash variable value	
+							[out] BSTR* _pbsVarValue );
+
+	// Get the count of flash variables 
+	// Note: Valid only for variables specified via SetFlashVariable() call
+	[helpstring("Get the count flash variables"
+				"Note: Valid only for variables specified via SetFlashVariable() call")]
+	HRESULT	FlashGetVariablesCount(
+									// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+									[in] BSTR _bsItemID, 
+									//Count of flash variables 
+									[out] int* _pnCount );
+
+	// Get flash variable name (by index)
+	// Note: Valid only for variables specified via SetFlashVariable() call
+	[helpstring("Get the name of flash variable by index"
+				"Note: Valid only for variables specified via SetFlashVariable() call")]
+	HRESULT	FlashGetVariableName(
+								// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+								[in] BSTR _bsItemID, 
+								//Flash variable index	
+								[in] int _nIndex, 
+								//Flash variable name
+								[out] BSTR* _pbsVarName );
+
+	// Call the function for specified flash item
+	[helpstring("Call the function for specified flash item")]	
+	HRESULT	FlashCallFunction(	
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							//Flash request
+							// Note: The _bsRequest should have the next format:
+							// <invoke name="function_name"><arguments><string>string param</string><number>100</number><number>0.1</number></arguments></invoke>
+							[in] BSTR _bsRequest, 
+							//Flash response
+							[out] BSTR* _pbsResponce );
+
+	// Go to label in movie for specified flash item	
+	// - For labels on root element (_level0) use FlashGoToLabel( strCookie, "_level0", "label_name" );
+	// - If flash have the movie clip called 'clip1' with a frame label 'label_name2',
+	// use FlashGoToLabel( strCookie, "_level0/clip1", "label_name2" );
+	[helpstring("Go to label in movie for specified flash item"				
+				" - For labels on root element (_level0) use FlashGoToLabel( strCookie, '_level0', 'label_name' );"
+				" - If flash have the movie clip called 'clip1' with a frame label 'label_name2',"
+				" use FlashGoToLabel( strCookie, '_level0/clip1', 'label_name2' );")]
+	HRESULT	FlashGoToLabel(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							//Target value
+							[in] BSTR _bsTarget, 
+							//Label name
+							[in] BSTR _bsLabel );
+
+	// Go to frame in movie for specified flash item
+	// Fopr the root element (_level0) use FlashGoToFrame( strCookie, "_level0", 100 );
+	[helpstring("Go to frame in movie for specified flash item")]
+	HRESULT	FlashGoToFrame(
+							// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+							[in] BSTR _bsItemID, 
+							//Target value
+							[in] BSTR _bsTarget, 
+							//Frame
+							[in] int _nFrame );
+
+	///////////////////////////////////////////////////////////////////////
+	// Text related methods
+
+	[helpstring("Set text props ")]
+	HRESULT TextSetProps(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//Text item properties
+						[in] CG_TEXT_PROPS* _pItemInfo, 
+						//Update item size
+						//Note: If eCGDT_WORDBREAK flag specified -> only height updated
+						[in] BOOL _bUpdateItemSize,
+						// Time span in milliseconds for changes to come up
+						// - valid only for text/outline color
+						[in] int _nMsecForChange );
+
+	[helpstring("Get text props ")]
+	HRESULT TextGetProps(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						//Text item properties
+						[out] CG_TEXT_PROPS* _pTextProps );
+
+	
+	///////////////////////////////////////////////////////////////////////
+	// Basic automation methods
+
+	[helpstring("Set auto blend for specified CG item")]
+	HRESULT	SetAutoBlend(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						// Structure for item auto blending
+						[in] CG_AUTO_BLEND* _pAutoBlend );
+
+	[helpstring("Get auto blend for specified CG item")]
+	HRESULT	GetAutoBlend(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						// Structure for item auto blending
+						[out] CG_AUTO_BLEND* _pAutoBlend );
+
+	[helpstring("Set item movement for specified CG item"
+			    "The playing type (loop/no-offsecreen) is specified via CG_ITEM_PROPS::ePlayingMode variable")]
+	HRESULT	SetItemMovement(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						// Structure for item movement information
+						[in] CG_ITEM_MOVEMENT* _pItemMove );
+
+	[helpstring("Get item movement for specified CG item")]
+	HRESULT	GetItemMovement(
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+						[in] BSTR _bsItemID, 
+						// Structure for item movement information
+						[out] CG_ITEM_MOVEMENT* _pItemMove );
+
+	[helpstring("Set the playing rate properties")]
+	HRESULT	SetItemRate( 
+		// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+		[in] BSTR _bsItemID, 
+		// Use original rate flag (ignored if interlacing enabled)
+		[in] BOOL _bOriginalRate,
+		// Speed value
+		// 1.0 - default, 2 - twice faster, 0.5 - twice slower, etc. 
+		// Note: For image sequence - the value may been negative (for reverse playback)
+		[in] double _dblSpeed );
+
+	[helpstring("Get the playing rate properties")]
+	HRESULT	GetItemRate( 
+		// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+		[in] BSTR _bsItemID, 
+		// Use original rate flag (ignored if interlacing enabled)
+		[out] BOOL* _pbOriginalRate,
+		// Speed value
+		// 1.0 - default, 2 - twice faster, 0.5 - twice slower, etc. 
+		// Note: For image sequence - the value may been negative (for reverse playback)
+		[out] double* _pdblSpeed );
+
+	///////////////////////////////////////////////////////////////////////
+	// The C++ callback implementation
+
+	// Note: 
+	// 1) The callback can be set only AFTER filter added to graph
+	// 2) After filter removed from graph, all callbacks is removed.
+
+	[helpstring("Add the callback interface")]
+	HRESULT AddCallback( 
+						[in] IMLCharGenCallback* _pCallback, 
+						[in] int _nCookie );
+
+	[helpstring("Remove the callback interface by callback pointer")]
+	HRESULT RemoveCallback( [in] IMLCharGenCallback* _pCallback );
+
+	// Note: All callbacks with same cookie will be removed
+	[helpstring("Remove the callback interface by callback cookie")]
+	HRESULT RemoveCallback2( [in] int _nCookie );
+
+	///////////////////////////////////////////////////////////////////////
+	// The special items (e.g. crawl, roll implementation)
+
+	// Note: The content of 'special' item added via TickerAddContent() method
+	[helpstring("Method for add new ticker item e.g. the crawler or roll-up."
+				"The playing type (loop/no-offsecreen) is specified via CG_ITEM_PROPS::ePlayingMode variable")]
+	HRESULT TickerAddNew(
+					   // Properties of ticker item
+					   // Here specified the type of special item (e.g. crawl, roll, vertical or horizontal ticker), 
+					   // background description, movement speed, movement type etc.
+					   // Note: 
+					   // - By default (except case than image used) the crawl have the width == 100% of screen, and height = 6% of screen. 
+					   // The rolls have with = 100% of screen and height = 100% of screen
+					   // - The size can be modifed via SetItemSize() or
+					   // specified via _bsItemProps (... width='xxx' height='yyy'... ).
+					   // Supported types:
+					   // 'crawl' - the crawling line
+					   // 'roll' - the rool-up text
+					   // 'ticker-vert' / 'ticker-vert-XX' - the ticker with vertical items changing, the XX (optional) is number of lines (default is 1)
+					   // 'ticker-horz' / 'ticker-horz-XX'- the ticker with horizontal items changing, the XX (optional) is number of lines (default is 1)
+					   //
+					   // For specify the graphics background use the next srting
+					   // <cg-item><graphics type='block-1' color='Red-Green-Blue'/><ticker type='roll'/><cg-item>
+					   // For specify the image background use the next string
+					   // <cg-item path='path-to-image.png'><ticker type='roll'/><cg-item>
+					   // Additionally you can specify the text properties
+					   // <cg-item><ticker type='roll'/><default-text font='Arial' font-size='0.7' style='uppercase'/><cg-item>
+					   // Also the text specification can be combined with 
+					   [in] BSTR _bsItemTypeOrXMLDesc, 					  
+					   // X position
+					   [in] double _dblPosX,					   
+					   // Y position
+					   [in] double _dblPosY,
+					   // Width - use 0 for default width
+					   [in] double _dblSizeX,					   
+					   // Height - use 0 for default height
+					   [in] double _dblSizeY,
+					   //Relative position and size 
+					   [in] BOOL _bRelativePos,
+					   // Determines visible state of item on add  (shown or hidden)
+					   [in]	BOOL _bShow,
+						// Item ID - unique string, identifying the CG item (can't contain spaces, and the next characters: ';' ',' ':' '<' '>' '?' '*' '"' ''' (quotes) )
+					   	// Note: _pbsItemID can be empty string, in this case unique 
+						//		 ID (like 'item-000') will be generated
+					   [in,out] BSTR* _pbsTickerID );
+
+	[helpstring("Method for add content for ticker item e.g. the crawler or roll-up.")]
+	HRESULT TickerAddContent(
+						// The ticker item ID
+						[in] BSTR _bsTickerItemID,
+						// The ticker text (optionally with properties) or *.txt files (each line the new ticker item) or image/flash file.
+						[in] BSTR _bsTickerTextOrFile,
+						// The adding type
+						// Supported:
+						// 'add-to-end' (default) - the new ticker item added to the end of items list
+						// 'remove-first' - the first items from ticker removed, new one - added to the end
+						// 'remove-all' - all items removed (except displaying now) - new item/items added
+						// Flag:
+						// 'multiline' - each line of text string added as separate item
+						// 'not-track-file' - not track the text file changing (for update tickers)
+						// Usage: 
+						// TickerAddContent( cbsTickerID, "Some Text...", "remove-first, multiline" );
+						// TickerAddContent( cbsTickerID, "C:\Folder\news.txt", "remove-all, not-track-file" );
+					   	[in] BSTR _bsAddType );
+
+	//////////////////////////////////////////////////////////////////////////
+	// The compositions implementation
+
+ 	[helpstring("Capture item image. Note: Groups items not supported yet")]
+ 	HRESULT CaptureItemImage( 
+							// Item ID - unique string, identifying the CG item
+							[in] BSTR _bsItemID, 
+							// File path
+							[in] BSTR _bsFileName, 
+							// File type (see eCG_FileType for details)
+							[in] eCG_FileType _eFileType);
+
+
+	//////////////////////////////////////////////////////////////////////////
+	// The compositions implementation
+
+	[helpstring("Get count of compositions")]
+	HRESULT CompositionsGetCount( 
+							// Compositions count
+							[out] int* _pnCount );
+
+	[helpstring("Get composition name and comment by index")]
+	HRESULT CompositionsGetByIndex(
+							// Composition index
+							[in] int _nIndex, 
+							// Composition name
+							[out] BSTR* _pbsName, 	
+							// Composition comment
+							[out] BSTR* _pbsComment );
+
+
+	[helpstring("Add new composition based on current items confingurations")]
+	HRESULT CompositionsAddItems( 
+						// Item ID of CG item or Item IDs separated by comma (,) or the NULL or empty string for all CG items.
+						[in] BSTR _bsItemsID,
+						// Clear flag - remove all previously added items
+						[in] BOOL _bClearBeforeAdd,
+						// Composition comment (for existing compositions -> will be update if not empty or NULL)
+						[in] BSTR _bsCompositionComment,
+						// Composition name (if NULL or empty string) -> the new name (like composition.000) will be generated
+						[in,out] BSTR* _pbsCompositionName );
+
+	[helpstring("Save one composition or all compositions (if bsCompositionName NULL or empty string) into XML file.")]
+	HRESULT CompositionsSaveToFile( 
+						// Name of composition to save (NULL or empty string to save all compositions)
+						[in] BSTR _bsCompositionName, 
+						// XML file name for save
+						[in] BSTR _bsFileName );
+
+	[helpstring("Load one composition from XML file or XML string.")]
+	HRESULT CompositionsLoadOne( 
+						// File name or XML descriptions
+						[in] BSTR _bsFileNameOrXMLDescription, 
+						// The composition name (used only if one composition in file / XML Desc)
+						[in,out] BSTR* _pbsCompositionName );
+
+
+	[helpstring("Load all composition from XML file or XML string.")]
+	HRESULT CompositionsLoadAll( 
+						// File name or XML descriptions
+						[in] BSTR _bsFileNameOrXMLDescription, 
+						// Clear flag - remove all compositions before load
+						[in] BOOL _bClearBeforeLoad );
+
+
+	[helpstring("Display Composition - show/hide specified compostion and (optionally) chnage the composition items properties (e.g. text, color etc.)")]
+	HRESULT CompositionsDisplay( 
+								// Name of composition to apply
+								[in] BSTR _bsCompositionName, 
+								// Parameter string
+								// This string is used to pass additional parameters to the composition items. You can change any desirable XML parameter, for example: 
+								// MySampleTextItem::cg-props::bg-color=green - change the background of "MySampleTextItem" to green
+								// MySampleTextItem::cg-props::alpha = 100 - change the alpha of "MySampleTextItem" to 100
+								// You can change several parameters by the same call by separating them with space:
+								// MySampleTextItem1::text='Breaking News' MySampleTextItem2::text='Ivanov Ivan'							
+								[in] BSTR _bsParamString, 
+								// Time for composition to come up (in seconds )
+								// If negative -> hide current compostion for ABS(_dblTimeIntro) seconds
+								[in] double _dblTimeIntro, 
+								// Time for composition to be shown (in seconds)
+								[in] double _dblShowTime, 
+								// Time for composition to hide (in seconds)
+								[in] double _dblTimeExit );
+
+	[helpstring("Change Composition Name")]
+	HRESULT CompositionsChangeName( 
+								//Name of composition
+								[in] BSTR _bsCompositionName,
+								//New Name of composition (use the same name or empty string for chnage only comment)
+								[in] BSTR _bsNewCompositionName,
+								//New comment
+								[in] BSTR _bsNewCommment );
+
+	[helpstring("Remove Composition")]
+	HRESULT CompositionsRemove( 
+								//Name of composition to remove
+								[in] BSTR _bsCompositionName );
+
+	[helpstring("Get number of items in composition")]
+	HRESULT CompositionsGetItemsCount( 
+						// Name of composition 
+						[in] BSTR _bsCompositionName,
+						// Clear flag - remove all previously added items
+						[in] int* _pnCount );
+
+	[helpstring("Get item in composition")]
+	HRESULT CompositionsGetItem( 
+						// Name of composition 
+						[in] BSTR _bsCompositionName,
+						// Item index (in composition),
+						[in] int _nIndex,
+						// Item ID
+						[out] BSTR* _pbsItemID,
+						// Item XML description
+						[out] BSTR* _pbsItemXMLDesc );
+
+
+	[helpstring("Remove item from composition")]
+	HRESULT CompositionsRemoveItem( 
+						// Name of composition 
+						[in] BSTR _bsCompositionName,
+						// Item ID (in composition),
+						[in] BSTR _bsItemID );
+
+// 	[helpstring("Get composition key-frame count")]
+// 	HRESULT CompositionsGetKeyFrameCount( [in] BSTR _bsCompositionName, [out] int* _pnKeyFrames );
+// 
+// 	[helpstring("Get composition key-frame")]
+// 	HRESULT CompositionsGetKeyFrame( [in] BSTR _bsCompositionName, [in] int _nIndex, [out] BSTR* _pbsName, [out] double* _pdblTimeForApply );
+// 
+// 	[helpstring("Get composition information")]
+// 	HRESULT CompositionsGetInfo( [in] BSTR _bsCompositionName, [out] int* _pnKeyFrames, [out] BSTR* _pbsFullDescription );
+
+	// Note - use not empty bsParamOrName and dblTimeForApply == 0 for manual apply the composition key-frame
+	// - use the negative offset for 
+// 	[helpstring("Set composition update based on current items confingurations and time for apply")]
+// 	HRESULT CompositionsAddKeyFrame( [in] BSTR _bsCompositionName, [in] BSTR _bsParamOrName, [in] double _dblTimeForApply );
+
+	[helpstring("Display filters properties page")]
+	HRESULT ShowPropertiesPage( [in] LONG _lHWndParent );
+
+	// This method work ONLY with ARGB32 input colorpsace
+	[helpstring("Enable/Disable keying mode (normalize ARGB) - used e.g. for internal DeckLink keying")]
+	HRESULT	EnableKeyingMode(
+						//TRUE(1) for enable keying mode , FALSE(0) - for disable 
+						[in] BOOL _bEnable );
+
+	// This method work ONLY with ARGB32 input colorpsace
+	[helpstring("Get keying mode (normalize ARGB) - used e.g. for internal DeckLink keying")]
+	HRESULT	IsKeyingMode(
+						//TRUE(1) for keying mode enabled, FALSE(0) - disabled 
+						[out] BOOL* _pbKeying );
+
+	[helpstring("Save one composition or all compositions (if bsCompositionName NULL or empty string) into XML description string.")]
+	HRESULT CompositionsSaveToString( 
+						// Name of composition to save (NULL or empty string to save all compositions)
+						[in] BSTR _bsCompositionName, 
+						// XML string with composition description
+						[out] BSTR* _pbsXMLDesc );
+
+	[helpstring("Load CG XML config with additional params (clear, load type etc.)")]
+	HRESULT LoadConfig( 
+						// Name of configuration file or XML config string
+						[in] BSTR _bsConfigPathXML, 
+						// Clear CG default flag (remove all items, compostions, schedules, used if not spcfied via param)
+						[in] BOOL _bDefaultClear,
+
+						// Parameters:
+
+						// For clear 
+						// 'clear-items' = true/false (default is _bClear)
+						// 'clear-compositions' = true/false (default is _bClear)
+						// 'clear-schedule' = true/false (default is _bClear)
+
+						// For load
+						// 'load-items' = true/false (default is true)
+						// 'load-compositions' = true/false (default is true)
+						// 'load-schedule' = true/false (default is true)
+						[in] BSTR _bsParam );
+
+	[helpstring("Display Composition in specified layer - show/hide specified compostion and (optionally) chnage the composition items properties (e.g. text, color etc.)")]
+	HRESULT CompositionsDisplayInLayer( 
+								// Name of composition to apply
+								[in] BSTR _bsCompositionName, 
+								// Parameter string
+								// This string is used to pass additional parameters to the composition items. You can change any desirable XML parameter, for example: 
+								// MySampleTextItem::cg-props::bg-color=green - change the background of "MySampleTextItem" to green
+								// MySampleTextItem::cg-props::alpha = 100 - change the alpha of "MySampleTextItem" to 100
+								// You can change several parameters by the same call by separating them with space:
+								// MySampleTextItem1::text='Breaking News' MySampleTextItem2::text='Ivanov Ivan'							
+								[in] BSTR _bsParamString, 
+								// Layer ID for contain composition or NULL / Empty String
+								[in] BSTR _bsLayerID, 
+								// Time for composition to come up (in seconds )
+								// If negative -> hide current compostion for ABS(_dblTimeIntro) seconds
+								[in] double _dblTimeIntro, 
+								// Time for composition to be shown (in seconds)
+								[in] double _dblShowTime, 
+								// Time for composition to hide (in seconds)
+								[in] double _dblTimeExit );
+
+
+	[helpstring("Specify the input video modification"
+				"Used for show video on the part of screen, or show only part of input video."
+				"Note: The Z-order of input video / overlayed items, can be specified via [[ChangeItemZOrder]] method,"
+				"the video have the 'input-video' string-id")]
+	HRESULT	SetVideoOutputRectWithDelay(
+								//Source rectangle - area FROM which source video will be taken
+								[in] RECT* _prcSource, 
+								//Source rectangle - area TO which source video will be placed
+								[in] RECT* _prcTarget, 
+								//Back color value
+								[in] int _crBackColor,
+								//If true - video stream will be placed above the flash
+								//If false - flash will be placed above the video stream
+								[in] BOOL _bTopmostVideo, 
+								//Time span in milliseconds before set rect
+								[in] int _nMsecDelay,
+								//Time span in milliseconds for changes to come up
+								//Note: _bTopmostVideo property applyed immediate
+								[in] int _nMsecForChange );
+
+	[helpstring("Set time offset or time (for timecode, subtitles) related to stream time")]
+	HRESULT	SetTimeOffset( [in] double _dblTime, [in] BOOL _bStreamTime ); 
+
+	// Method for set returned value for ActiveScript call of external interface method.
+	// Called from client in next chain of calls:
+	// ActiveScript -> IFlashExternal::CallExternal() -> SendMessage() to main GUI thread ->
+	// client object IMLFlashExtern::CallExtern() -> IMLFlashSource::SetReturnValue() ->
+	// -> IFlashExternal::SetReturnValue( bstrValue ) -> save bstrValue
+	// client object: return from IMLFlashExtern::CallExtern() -> return from SendMessage() ->
+	// -> return to IFlashExternal::CallExternal() -> IShockwaveFlash::SetReturnValue( bstrValue ) ->
+	// -> return to Active Script
+	//
+	// bstrValue: string in external API's XML format, Adobe Flash help:
+	//			  "Using the external API > Using the ExternalInterface class > The external API's XML format")
+	//
+	//		Boolean true:							<true/>
+	//		Boolean false							<false/>
+	//
+	//		String									<string>string value</string>
+	//
+	//		Number, int, uint						<number>27.5</number>
+	//												<number>-12</number>  
+	//
+	//		Array (elements can be mixed types)		<array>
+	//													<property id="0">
+	//														<number>27.5</number>
+	//													</property>
+	//													<property id="1">
+	//														<string>Hello there!</string>
+	//													</property>
+	//													...
+	//												</array>
+	//												The property node defines individual elements,
+	//												and the id attribute is the numeric, zero-based index.
+	//
+	//		Object									<object>
+	//													<property id="name">
+	//														<string>John Doe</string>
+	//													</property>
+	//													<property id="age">
+	//														<string>33</string>
+	//													</property>
+	//													...
+	//												</object>
+	//												The property node defines individual properties,
+	//												and the id attribute is the property name (a string).
+	[helpstring("Set return value for callback. Note: Work only for C++ callback")]
+	HRESULT	FlashSetReturnValueCB(
+							//Return value
+							[in] BSTR _bsReturnValue );
+
+
+};
+
+cpp_quote("#ifndef CG_SCHEDULE_TIMES_DEFINED")
+cpp_quote("#define CG_SCHEDULE_TIMES_DEFINED")
+
+// Character Generator schedule times structure
+typedef struct CG_SCHEDULE_TIMES
+{
+	// Time for show (in seconds, according to specified timeline)
+	double		dblScheduledTime;
+
+	// Time for composition/items to come up (in seconds )
+	// Note: Negative times mean hide/exit compositions
+	double		dblIntroTime;
+	// Time for composition to be shown (in seconds)
+	// Note : Zero time mean show till end of clip or infinite
+	double		dblShowTime;
+	// Time for composition to hide (in seconds)
+	// Time for exit 
+	double		dblExitTime;
+
+	// Parameter for show hide items
+	// 0  : default (use the dblIntroTime sign)
+	// -1 : hide item (e.g. for hide w/o transitions)
+	// 1  : show item (e.g. for show w/o transitions)
+	int			nShowHide;
+} CG_SCHEDULE_TIMES;
+
+cpp_quote("#endif // CG_SCHEDULE_TIMES_DEFINED")
+
+	
+// Timeline state
+typedef enum eCG_TimelineState
+{
+	//Stopped
+	eCGTS_Stopped,
+	//Paused
+	eCGTS_Paused,
+	//Paused
+	eCGTS_Running
+} eCG_TimelineState;
+
+
+[
+	object,
+	uuid(19E97A92-BB5A-4446-897A-6A6177AF963E),
+	helpstring("IMLCharGenSchedule Interface"),
+	pointer_default(unique)
+]
+interface IMLCharGenSchedule : IUnknown
+{
+	[helpstring("Get count of scheduled tasks")]
+	HRESULT ScheduleGetCount( 
+		// Timeline ID or Empty string for default (file) timeline 
+		[in] BSTR _bsTimelineID,
+		// Number of scheduled tasks
+		[out] int* _pnCount 
+		);
+
+	[helpstring("Get scheduled task info")]
+	HRESULT ScheduleGet( 
+		// Timeline ID or Empty string for default (file) timeline 
+		[in] BSTR _bsTimelineID,
+		// Schedule Index
+		// Note: If Index = -1 -> The all schedules description returned via _pbsParamStringOrXMLFullDesc
+		[in] int _nIndex, 
+		// Composition or Item ID
+		[out] BSTR* _pbsItemOrCompositionID, 
+		// The parameters string or full XML Desc
+		[out] BSTR* _pbsParamStringOrXMLFullDesc, 
+		// Schedule times 
+		[out] CG_SCHEDULE_TIMES* _pTimes );
+
+	[helpstring("Add schedule task")]
+	HRESULT ScheduleAdd( 
+		// Timeline ID or Empty string for default (file) timeline 
+		[in] BSTR _bsTimelineID,
+		// Composition or Item ID (if empty srting or zero -> the full description expected in _bsParamStringOrXMLFullDesc)
+		[in] BSTR _bsItemOrCompositionID, 
+		// The parameters string or full XML Desc
+		[in] BSTR _bsParamStringOrXMLFullDesc, 
+		// Schedule times 
+		[in] CG_SCHEDULE_TIMES* _pTimes );
+
+	[helpstring("Remove schedule task")]
+	HRESULT ScheduleRemove( 
+		// Timeline ID or Empty string for default (file) timeline 
+		[in] BSTR _bsTimelineID,
+		// Schedule Index (or -1 for remove all scheduled tasks)
+		[in] int _nIndex );
+
+	[helpstring("Start schedule timeline")]
+	HRESULT ScheduleTimelineStart( 
+		// Timeline ID
+		// Note: default (file) timeline not supported
+		[in] BSTR _bsTimelineID,
+		// Start time
+		[in] double _dblStartTime,
+		// Timeline cycle time
+		[in] double _dblCycleTime,
+		// Stop all other timelines flag
+		[in] BOOL _bStopAllOthers );
+
+	[helpstring("Pause schedule timeline")]
+	HRESULT ScheduleTimelinePause( 
+		// Timeline ID
+		// Note: default (file) timeline not supported
+		[in] BSTR _bsTimelineID );
+
+	[helpstring("Continue/Seek schedule timeline")]
+	HRESULT ScheduleTimelineContinue( 
+		// Timeline ID
+		// Note: default (file) timeline not supported
+		[in] BSTR _bsTimelineID,
+		// Seek time 
+		// Use -1 for continue from paused time
+		[in] double _dblSeekTime );
+
+	[helpstring("Stop schedule timeline")]
+	HRESULT ScheduleTimelineStop( 
+		// Timeline ID
+		// Note: default (file) timeline not supported
+		[in] BSTR _bsTimelineID );
+
+	[helpstring("Get count of timelines")]
+	HRESULT ScheduleTimelineGetCount( 
+		// Number of timelines (exlude default (file) timeline)
+		[out] int* _pnTimelines );
+
+	[helpstring("Get schedule timeline ID by index")]
+	HRESULT ScheduleTimelineGetID( 
+		// Timeline index (zero based)
+		[in] int _nIndex,
+		// Timeline ID 
+		[out] BSTR* _pbsTimelineID );
+
+	[helpstring("Get schedule timeline times")]
+	HRESULT ScheduleTimelineGetTimes( 
+		// Timeline ID
+		// Note: default (file) timeline not supported
+		[in] BSTR _bsTimelineID,
+		// Timeline time 
+		[out] double* _pdblTime,
+		// Cicle time (zero for no cicles)
+		[out] double* _pdblCicleTime,
+		// Timeline state
+		[out] eCG_TimelineState* _ptState );
+
+	[helpstring("Save schedule to XML string")]
+	HRESULT ScheduleSaveToString(
+		// TimeLine ID 
+		// NULL or Empty string for file timeline
+		// 'All' for all timelines 
+		[in] BSTR _bsTimeLineID, 
+		// Schedule XML description
+		[out] BSTR* _pbsTimeLineXMLDesc );
+
+	[helpstring("Save schedule to XML file")]
+	HRESULT ScheduleSaveToFile(
+		// TimeLine ID 
+		// NULL or Empty string for file timeline
+		// 'All' for all timelines 
+		[in] BSTR _bsTimeLineID, 
+		// XML File name
+		[in] BSTR _bsFileName,
+		[in] BOOL _bUnicode );
+
+	[helpstring("Load schdule from XML file or XML string")]
+	HRESULT ScheduleLoadFromXML( 
+		// Path name for xml descrition or
+		// string with schedule XML description
+		[in] BSTR _bsPathNameOrXMLDesc,
+		// Remove all timelines
+		[in] BOOL _bRemoveAllTimelines );
+
+	[helpstring("Basic schedule task (w/o timelines), not saved")]
+	HRESULT ScheduleBasic( 
+		// Composition or Item ID
+		[in] BSTR _bsItemOrCompositionID, 
+		// Item or composition flag
+		[in] BOOL _bItem,
+		// The parameters string 
+		[in] BSTR _bsParamString, 
+		// Schedule times 
+		[in] CG_SCHEDULE_TIMES* _pTimes );
+
+	[helpstring("Cancel basic schedule task (w/o timelines), not saved")]
+	HRESULT ScheduleBasicCancel( 
+		// Composition or Item ID (if empty srting or zero -> the full description expected in _bsParamStringOrXMLFullDesc)
+		[in] BSTR _bsItemOrCompositionID, 
+		// Item or composition flag
+		[in] BOOL _bItem,
+		// Show/hide composition or item
+		//  1 - Show (Apply compositon)
+		// -1 - Hide (Exit composition)
+		//  0 - Do nothing
+		[in] int _nShowHide );
+};
+
+[
+	object,
+	uuid(19E97AC0-BB5A-4446-897A-6A6177AF963E),
+	helpstring("IMLCharGenEdit Interface"),
+	pointer_default(unique)
+]
+interface IMLCharGenEdit : IUnknown
+{
+	[helpstring("For UI - Get item by position")]
+	HRESULT EditItemGetByPoint( [in] BSTR _bsGroupID, 
+		[in] int _nPosX, 
+		[in] int _nPosY, 
+		[out] BSTR* _pbsItemID );
+
+	[helpstring("For UI - Get items fitted into rect")]
+	HRESULT EditItemsGetByRect( [in] BSTR _bsGroupID, 
+		[in] int _nLeft, [in] int _nTop, 
+		[in] int _nRight, [in] int _nBottom, 
+		[out] BSTR* _pbsItemsIDs );
+
+	[helpstring("For UI - get selected items count")]
+	HRESULT EditSelectionGetCount( [out] int* _pnSelCount );
+
+	[helpstring("For UI - select specified item.")]
+	HRESULT EditSelectionGetByIndex( [in] int _nIndex, [out] BSTR* _pbsItemID, [out] BSTR* _pbsColor );
+
+	[helpstring("For UI - select specified item.")]
+	HRESULT EditSelectionAdd( [in] BSTR _bsItemID, [in] BSTR _bsColor, [in] BOOL _bClearSel );
+
+	[helpstring("For UI - remove item from selection")]
+	HRESULT EditSelectionRemove( [in] BSTR _bsItemID );
+
+	[helpstring("For UI - get item absolute rect")]
+	HRESULT EditItemAbsoluteRectGet( [in] BSTR _bsItemID, [out] RECT* _prcItemRect );
+
+	[helpstring("For UI - set item absolute rect")]
+	HRESULT EditItemAbsoluteRectSet( [in] BSTR _bsItemID, [in] RECT* _prcItemRect );
+};
+
+[
+	object,
+	uuid(19E97AB0-BB5A-4446-897A-6A6177AF963E),
+	helpstring("IMLObject Interface"),
+	pointer_default(unique)
+]
+interface IMLCGObject : IUnknown
+{
+	[helpstring("Start CG Object")]
+	HRESULT StartCG();
+
+	[helpstring("Stop CG Object")]
+	HRESULT StopCG();
+
+	[helpstring("Process sample")]
+	HRESULT DoMixingOnBitmap( [in] LONG _lHBitmapIn, [out] LONG* _plHBitmapOut, [in] BOOL _bFreeInput, [in] double _dblTime ); 
+
+	[helpstring("Process sample")]
+	HRESULT DoMixingOnMemory( [in] BYTE* _pbImageRow, [in] BOOL _bTopRow, [in] double _dblTime ); 
+
+	[helpstring("Process sample")]
+	HRESULT DoMixingOnMemoryAligned( [in] LONGLONG _pbImageRow, [in] int _nRowStride, [in] BOOL _bTopRow, [in] double _dblTime ); 
+};

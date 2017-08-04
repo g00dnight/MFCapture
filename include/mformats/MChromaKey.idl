@@ -1,0 +1,287 @@
+// MChromaKey.idl : IDL source for MChromaKey
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (MChromaKey.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl"; 
+
+cpp_quote("#ifndef CHROMA_KEY_RAW_DEFINED")
+cpp_quote("#define CHROMA_KEY_RAW_DEFINED")
+
+//Chroma key type enumeration
+typedef enum eCK_Type
+{
+	// Alpha channel for ARGB32, none for other
+	eCKT_Alpha, 
+	// None color key
+	eCKT_None,	
+	// RGB color key
+	eCKT_RGB,	
+	// HLS color key
+	eCKT_HLS,	
+	// YUV color key 
+	eCKT_YUV,
+	// Auto - for detection
+	eCKT_Auto,
+} eCK_Type;
+
+// Single chroma key definition Structure
+typedef struct SINGLE_KEY
+{
+	// The center value - RGB(R,G,B) or RGB(H,L,S)
+	int				nValue;					
+	// The tolerance value (for each component)  RGB(dH,dL,dS)
+	// - the colors inside ellipsoid with center in [H,L,S] and 
+	// dH, dL, dS axis, assume as semi-transparent (with nAlpha transparency)
+	// let be Ellipsoid 1 - inner ellipsoid 
+	int				nDelta;	
+
+	// The additional value for delta (scalar value) (e.g. dT=10)
+	// - the color between ellipsoid with center in [H,L,S] and 
+	// dH + dT, dL + dT, dS + dT axis (the outer ellipsoid) and 
+	// Ellipsoid 1 will be have transparency from nAlpha to 100%
+	// solid with linear progressive. 
+	// Note: If nDelta = 0 -> this key ignored.
+	int				nSmoothRange;
+
+	// The transparency for color inside ellipsoid [0-255]
+	// nAlpha = 0 -> the transparent (the chroma is meaningless in this case) 
+	// nAlpha = 255 -> 100% opaque (e.g. only for chroma correction).
+	// nAlpha = 128 -> 50% opaque 
+	int				nAlpha;				
+
+	// For spill correction (color-cancel) (used only of color-cancel enabled)
+	// The range for anti-spill correction 
+	// (similar to nSmoothRange, but only for anti-spill correction)
+	int				nCancelRange;		
+
+	// [-128,128] Power of anti-spill correction (0 - off)
+	int				nCancelPower;	
+
+	// [-128,128] Cancel chroma values (0 - off)
+	int				nCancelChroma;		
+
+	// [-128,128] Cancel luma values (0 - off)
+	int				nCancelLuma;		
+
+	// [-128,128] Cancel alpha values (0 - off)
+	int				nCancelAlpha;
+
+	// Reverse key flag 0/1 (for exclude points)
+	int				nReverseKey;
+} SINGLE_KEY;
+
+//Chroma key structure
+typedef struct CHROMA_KEY_RAW
+{
+	// Color-key type
+	eCK_Type	eType;				
+
+	// Chroma key parameters
+
+	// Number of color-keys
+	int				nKeysUsed;			
+
+	// The array of color-keys
+	SINGLE_KEY			arrKeys[16];
+
+	// The minimum values for transparency range
+	// - for avoid very low transparency all values less this value become 100% transparent
+	// Recommended value is 128
+	int				nMinTransparent;		//[0..255]
+
+	// The maximum values for smoothness range
+	// - for increase solid areas all alpha values greater this value become 100% solid
+	// Recommended value is 255
+	int				nMaxTransparent;		//[0..255]
+
+	// Smooth edges (0-255)
+	int				nEdgesSmooth;		
+
+	// Anti-spill	enabled flag
+	// Enable / disable color-cancel correction
+	// Special value == 2 - for show cancel areas
+	BOOL				bColorCancel;		
+
+	// The interlaced video flag:
+	// -1 - Auto, 0 - Progressive, 1 - Interlaced,
+	int				nInterlacedVideo;	 
+	
+	// For inverse key (0 - Usual, 1 - Inverse only key, 2 - Inverse anti-spill, 3 - Inverse key & anti-spill)
+	int				nInverseKey;		
+} CHROMA_KEY_RAW;
+
+
+cpp_quote("#endif // CHROMA_KEY_RAW_DEFINED")
+
+//Chroma key type enumeration
+typedef enum eCK_Adjust
+{
+	// High-level adjust type
+	eCKA_KeyType,		// RGB, HLS, YUV
+	
+	eCKA_Power,			// -1 ... 1
+	eCKA_Transparent,	// 0 ... 1
+	eCKA_Smooth,			// 0 ... 1
+	eCKA_Colors,			// 0 ... 1
+
+	eCKA_MinTransparent,		// 0 ... 1
+	eCKA_MaxTransparent,		// 0 ... 1
+
+	eCKA_ExcludePower,			// -1 ... 1
+	eCKA_ExcludeTransparent,		// 0 ... 1
+
+	// Low level adjust type
+	eCKA_Power_R_H_Y,	// -1 ... 1
+	eCKA_Power_G_L_U,	// -1 ... 1
+	eCKA_Power_B_S_V,	// -1 ... 1
+	
+	eCKA_Colors_Range,	// 0 ... 1
+	eCKA_Colors_Power,	// -1 ... 1
+	eCKA_Colors_Chroma,	// -1 ... 1
+	eCKA_Colors_Luma,	// -1 ... 1
+	eCKA_Colors_Alpha,	// -1 ... 1
+} eCK_Adjust;
+
+
+typedef struct CK_COLOR_ADJUST
+{
+	double	dblCancelRange;			
+	double	dblCancelPower;			
+	double	dblCancelChroma;			
+	double  dblCancelLuma;			
+	double	dblCancelAlpha;			
+} CK_COLOR_ADJUST;
+
+typedef struct CK_RANGE_ADJUST
+{
+	double	dblRangeR_H_Y;			
+	double	dblRangeG_L_U;			
+	double	dblRangeB_S_V;
+} CK_RANGE_ADJUST;
+
+typedef struct CK_ADJUST
+{
+	double	dblPower;
+	double	dblTransparent;
+	double	dblColors;
+	double	dblSmooth;
+	double	dblMinTransparent;
+	double	dblMaxTransparent;
+
+	double	dblExclPower;
+	double	dblExclTransparent;
+
+	CK_COLOR_ADJUST colAdjust;
+	CK_RANGE_ADJUST rangeAdjust;
+} CK_ADJUST;
+
+[
+	object,
+	uuid(B731001C-C777-4CBA-9033-D823782A005E),
+	pointer_default(unique)
+]
+interface IMKey : IUnknown
+{
+	[helpstring("Set frame for key detection and/or background.")] 
+	HRESULT KeyFrameSet( [in] IUnknown* _pMFrameKeyingOrNull, [in] IUnknown* _pMFrameBGOrNull );
+
+	[helpstring("Get frame for key detection and background.")] 
+	HRESULT KeyFrameGet( [out] IUnknown** _ppMFrameRes, [out] IUnknown** _ppMFrameBG );
+
+	[helpstring("Auto detect key")] 
+	HRESULT KeyDetect( [in] BSTR _bsProps, [out] IUnknown** _ppMFrameRes );
+
+	[helpstring("Add point to key")] 
+	HRESULT KeyAddPoint( [in] int _nXPosPixels, [in] int _nYPosPixels, 
+		[in] BSTR _bsProps, [out] IUnknown** _ppMFrameRes );
+
+	[helpstring("Exclude point from key")] 
+	HRESULT KeyExcludePoint( [in] int _nXPosPixels, [in] int _nYPosPixels, 
+		[in] BSTR _bsProps, [out] IUnknown** _ppMFrameRes );
+
+	[helpstring("Add rect to key")] 
+	HRESULT KeyAddRect( [in] int _nX1PosPixels, [in] int _nY1PosPixels, 
+		[in] int _nX2PosPixels, [in] int _nY2PosPixels, 
+		[in] BSTR _bsProps, [out] IUnknown** _ppMFrameRes );
+
+	[helpstring("Ajust keying propeties")] 
+	HRESULT KeyAdjustSet( [in] eCK_Adjust _eAdjust, [in] double _dblValue, 
+		[out] IUnknown** _ppMFrameRes );
+
+	[helpstring("Get keying ajust propeties")] 
+	HRESULT KeyAdjustGet( [in] eCK_Adjust _eAdjust, [out] double* _pdblValue );
+
+	[helpstring("Cancel last adjustement steps")] 
+	HRESULT KeyStepBack( [in] int _nSteps, [out] IUnknown** _ppMFrameRes );
+
+	[helpstring("Apply last adjustement steps (after step frwd)")] 
+	HRESULT KeyStepFwd( [in] int _nSteps, [out] IUnknown** _ppMFrameRes );
+
+	[helpstring("Reset key.")] 
+	HRESULT KeyReset( [out] IUnknown** _ppMFrameRes);
+
+	// Set/Get raw chroma key
+	[helpstring("Set chroma-key via structure")] 
+	HRESULT KeyRawSet( //Chroma key structure
+						[in] const CHROMA_KEY_RAW* _pvmKey, [in] const CK_ADJUST* _pKeyAdjust);
+
+	[helpstring("Get chroma-key structure")] 
+	HRESULT KeyRawGet( //Chroma key structure
+						[out] CHROMA_KEY_RAW* _pvmKey, [out] CK_ADJUST* _pKeyAdjust);
+};
+
+[
+	object,
+	uuid(B731001C-C811-4CBA-9033-D823782A005E),
+	pointer_default(unique)
+]
+interface IMChromaKey : IUnknown
+{
+	// Set/Get chroma key
+	[helpstring("Set chroma-key value structure")] 
+	HRESULT KeySet( [in] IMKey* _pKeyObject );
+
+	[helpstring("Get key value object, use last input frame or user-specifed key, for specify BG image use _bsProps = 'background='path''.")] 
+	HRESULT KeyGet( [in] IUnknown* _pMFrameForAdjustOrNull, [out] IMKey** _ppKeyObject, [in] BSTR _bsProps );
+
+	// Set/Get chroma key
+	[helpstring("Set chroma-key via structure")] 
+	HRESULT KeyRawSet( //Chroma key structure
+						[in] const CHROMA_KEY_RAW* _pvmKey);
+
+	[helpstring("Get chroma-key structure")] 
+	HRESULT KeyRawGet(
+						//Chroma key structure
+						[out] CHROMA_KEY_RAW* _pvmKey);
+
+
+};
+
+
+[
+	uuid(D3F4C631-FC55-4B9E-A300-5E86F7BA97EF),
+	version(1.0),
+]
+library MCHROMAKEYLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(FF12951C-DC32-42B7-B676-583883EF574E)		
+	]
+	coclass MChromaKey
+	{
+		[default] interface IMChromaKey;
+	};
+
+	[
+		uuid(F74E5C32-D592-4C20-A4E7-A470A713FF8A)		
+	]
+	coclass MKey
+	{
+		[default] interface IMKey;
+	};
+};
+

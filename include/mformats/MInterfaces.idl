@@ -1,0 +1,2698 @@
+//---------------------------------------------------------------------------
+// MInterfaces.idl : IDL source for MFormats & MPlatform
+//
+// Description: Interfaces for MPlatform & MFormats objects
+//
+//---------------------------------------------------------------------------
+// Copyright (c), Medialooks Soft OOO
+// http://www.medialooks.com/support/
+//
+//---------------------------------------------------------------------------
+//
+// This file and the source code contained within is Intellectual Property
+// of Medialooks Soft OOO. Your use of this source code is subject to
+// the Medialooks End-User License Agreement that can be found
+// here: http://www.medialooks.com/la/.
+//
+//---------------------------------------------------------------------------
+
+
+import "basetsd.h";
+import "unknwn.idl";
+import "Objidl.idl"; // For IStream
+
+#include "MDefines.idl"
+
+cpp_quote("#ifndef MFFRAME_DEFINED")
+cpp_quote("#define MFFRAME_DEFINED")
+
+typedef struct MF_FRAME_INFO
+{
+	LONGLONG		llVideoID;			
+	M_TIME		mTime;
+	M_AV_PROPS	avProps;
+	DWORD		cbAudio;
+	DWORD		cbVideo;
+	LONGLONG		lpVideo;
+	LONGLONG		lpAudio;
+	LONG			lAudioSamples;
+	DWORD		dwProcessID;
+	LONG			nDataCount;
+	LONG			nObjCount;
+	LONG			nStrCount;
+} MF_FRAME_INFO;
+
+// Type fo rect
+typedef enum eMFRectType
+{
+	eMFRT_Absolute = 0,			// Absolute positions in pixels
+	eMFRT_Relative = 1,			// Relative positions [0.0..1.0]
+	eMFRT_FixedCC_15x32 = 2,	// Fixed 15 rows and 32 columns (exclude overscan 7%) - used for CC 608 (15x32 chars)
+	eMFRT_Fixed14 = 14,			// Fixed 14 rows (exclude overscan 7%) 
+	eMFRT_Fixed20 = 20,			// Fixed 20 rows (exclude overscan 7%) 
+	eMFRT_Fixed24 = 24,			// Fixed 24 rows (exclude overscan 7%) 
+	eMFRT_Fixed32 = 32,			// Fixed 32 rows (exclude overscan 7%) 
+	eMFRT_Fixed40 = 40			// Fixed 40 rows (exclude overscan 7%) 
+} eMFRectType;
+
+typedef struct MF_RECT
+{
+	double dblPosX;		// Start position X
+	double dblPosY;		// Start position Y
+	double dblWidth;		// Width (could be zero)
+	double dblHeight;	// Height (could be zero)
+	eMFRectType   eRectType;	// The values is realtive to the frame size
+} MF_RECT;
+
+// Structure for planar formats 
+// Note: 
+// For BOTTOM-TOP images (nHeight < 0 ) lpVideoPlanes points to last line and cbVideoRowBytes is NEGATIVE
+typedef struct MF_VID_PTR
+{
+	LONGLONG lpVideoPlanes[4];
+	SIZE	 szVideoPlanes[4];
+	int		 cbVideoRowBytes[4];
+} MF_VID_PTR;
+
+typedef [v1_enum] enum eMFTextFlags
+{
+	eMFTF_TopLeft   = 0x00,
+	eMFTF_TopCenter = 0x01,
+	eMFTF_TopRight = 0x02,
+	eMFTF_TopJustify = 0x03,
+
+	eMFTF_CenterLeft = 0x10,
+	eMFTF_Center = 0x11,
+	eMFTF_CenterRight = 0x12,
+	eMFTF_CenterJustify = 0x12,
+
+	eMFTF_BottomLeft = 0x20,
+	eMFTF_BottomCenter = 0x21,
+	eMFTF_BottomRight = 0x22,
+	eMFTF_BottomJustify = 0x22,
+
+	eMFTF_HPos_Mask = 0x03,
+	eMFTF_VPos_Mask = 0x30,
+
+	eMFT_WordBreaks = 0x100,
+
+	eMFT_RightToLeft = 0x200,
+
+	eMFT_Vertical = 0x400,
+
+	eMFTF_WB_TopLeft   = 0x100,
+	eMFTF_WB_TopCenter = 0x101,
+	eMFTF_WB_TopRight = 0x102,
+	eMFTF_WB_TopJustify = 0x103,
+
+	eMFTF_WB_CenterLeft = 0x110,
+	eMFTF_WB_Center = 0x111,
+	eMFTF_WB_CenterRight = 0x112,
+	eMFTF_WB_CenterJustify = 0x112,
+
+	eMFTF_WB_BottomLeft = 0x120,
+	eMFTF_WB_BottomCenter = 0x121,
+	eMFTF_WB_BottomRight = 0x122,
+	eMFTF_WB_BottomJustify = 0x122,
+
+	eMFTF_FirstField = 0x1000,
+	eMFTF_SecondField = 0x2000
+} eMFTextFlags;
+
+
+typedef [v1_enum] enum eMFOverlayFlags
+{
+	eMFOF_NoScale = 0x0000,
+	eMFOF_LetterBox = 0x0001,
+	eMFOF_Crop = 0x0002,
+	eMFOF_NoAR = 0x0004,
+
+	eMFOF_ScaleMask = 0x000F,
+
+	eMFOF_FirstField = 0x1000,
+	eMFOF_SecondField = 0x2000
+} eMFOverlayFlags;
+
+
+[
+	object,
+	uuid(04FBCB23-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFBuffer : IUnknown
+{
+	[helpstring("Get buffer size, data pointer, and")] 
+	HRESULT BufferLock( [in] eMFLockType _eLockType, [out] LONG* _pcbMaxSize, [out] LONG* _pcbActualSize, [out] LONGLONG* _plpData );
+
+	[helpstring("Unlock buffer.")] 
+	HRESULT BufferUnlock( [in] eMFLockType _eLockType );
+
+	[helpstring("Get buffer actual size")] 
+	HRESULT BufferSizeGet( [out] LONG* _pcbMaxSize, [in] LONG* _pcbActualSize );
+
+	[helpstring("Set buffer actual size")] 
+	HRESULT BufferActualSizeSet( [in] LONG _cbActualSize );
+
+	[helpstring("Get buffer flags.")] 
+	HRESULT BufferFlagsGet([out] eMFBufferFlags* _peBufferFlags );
+
+// 	[helpstring("Set buffer flags.")] 
+// 	HRESULT BufferFlagsSet([in] eMFBufferFlags _eBufferFlags );
+
+	[helpstring("Get buffer shared ID and process ID (used for IPC)")] 
+	HRESULT BufferSharedIdGet([out] LONGLONG* _pllSharedID, [out] DWORD* _pdwProcessID, [out] eMFBufferFlags* _peBufferFlags );
+};
+
+[
+	object,
+	uuid(4F377000-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFFrame interface"),
+	pointer_default(unique)
+]
+interface IMFFrame : IUnknown
+{
+	[helpstring("Get frame process ID")] 
+	HRESULT MFGetProcessID( [out] DWORD* _pdwProcessID ); 
+
+	[helpstring("Get media properties")] 
+	HRESULT MFAVPropsGet( [out] M_AV_PROPS* _pProps, [out] long* _plAudioSamples ); 
+
+	[helpstring("Update media properties. Note: Some properties could not be changed - e.g. not allowed to increase width, height, change row-bytes")] 
+	HRESULT MFAVPropsSet( [in] M_AV_PROPS* _pProps, [in] BSTR _bsChannelsRemap  ); 
+
+	[helpstring("Get time")] 
+	HRESULT MFTimeGet( [out] M_TIME* _pTime ); 
+
+	[helpstring("Set time")] 
+	HRESULT MFTimeSet( [in] M_TIME* _pTime ); 
+
+	[helpstring("Check frame flag")] 
+	HRESULT MFFlagCheck( [in] eMFrameFlags _eFlagCheck, [out] int* _pnRes );
+
+	[helpstring("Get all frame properties")] 
+	HRESULT MFAllGet( [out] MF_FRAME_INFO* _pFrameInfo ); 
+
+	// Audio methods
+	[helpstring("Get audio data pointer (interleaved)")] 
+	HRESULT MFAudioGetBytes( [out] LONG* _pcbSize, [out] LONGLONG* _ppbAudio ); 
+
+	[helpstring("Get audio channel data pointer, WARNING !!! For 20, 24, 32 integer returned 32 bit float data. The changes appyed ONLY after MFAudioChannelsUpdate() call")] 
+	HRESULT MFAudioChannelGetBytes( [in] int _nChannel, [in] BOOL _bCreateNewChannels, [out] LONG* _pcbSize, [out] LONGLONG* _ppbAudio ); 
+
+	[helpstring("Update audio channel data / number of channels - after modification of memory returned by MFAudioChannelGet()")] 
+	HRESULT MFAudioChannelsUpdate(); 
+
+	[helpstring("Allocate audio data")] 
+	HRESULT MFAudioAlloc( [in] M_AUD_PROPS* _pAudProps, [in] LONG _lSamples ); 
+
+	[helpstring("Set audio data")] 
+	HRESULT MFAudioSet( [in] M_AUD_PROPS* _pAudProps, [in] LONG _cbSize, [in] LONGLONG _pbAudio ); 
+
+	[helpstring("Mix audio data (audio data should have same frequency)")] 
+	HRESULT MFAudioMixDirect( [in,out] LONG* _plAudioOffsetSrc, [in] IMFFrame* _pFrameMixFrom, [in,out] LONG* _plAudioOffsetMix, [in] LONG _lSamplesMixMax, [in] double _dblGainStartDb, [in] double _dblGainEndDb, [in] BOOL _bSymmetricGain ); 
+
+	[helpstring("Mix audio data")] 
+	HRESULT MFAudioMix( [in] IMFFrame* _pFrameMixFrom, [in] double _dblGainStartDb, [in] double _dblGainEndDb, [in] BOOL _bSymmetricGain, [in] BSTR _bsAudioBufferID ); 
+
+	[helpstring("Copy audio channels, the bits conversion could be also performed")] 
+	HRESULT MFAudioCopyTo( [in] BSTR _bsChannelsList, [in] IMFFrame* _pFrameTo ); 
+
+	[helpstring("Save audio to file (*.wav file used, if file exist and have WAV format -> add audio to the end of file, note: format not checked)")] 
+	HRESULT MFAudioSaveToFile( [in] BSTR _bsFileName, [in] BOOL _bAppend); 
+
+	[helpstring("Load audio data from WAV file")] 
+	HRESULT MFAudioLoadFromFile( [in] BSTR _bsFileName, [in] LONGLONG _llSamplesOffset, [in] LONG _lSamplesLoad ); 
+
+	[helpstring("Gain audio (multiple by specific gain, use ramp for smooth chnages), gain in dB")]
+	HRESULT MFAudioGain( [in] BSTR _bsChannelsList, [in] double _dblGainStartDb, [in] double _dblGainEndDb ); 
+
+	// Video methods
+	[helpstring("Get video data pointer")] 
+	HRESULT MFVideoGetBytes( [out] LONG* _pcbSize, [out] LONGLONG* _ppbVideo ); 
+
+	[helpstring("Get video HBITMAP - the returned bitmap should be free via WinAPI ::DeleteObject() call.")] 
+	HRESULT MFVideoGetHbitmap( [out] LONGLONG* _pllHBitmap ); 
+
+	[helpstring("Save video to file. Type of file deduced from extension (*.png, *.jpg, *.bmp, *.tga, *.tiff supported)")] 
+	HRESULT MFVideoSaveToFile( [in] BSTR _bsFileName ); 
+
+	[helpstring("Cut out part of video frame, without memory copy. nFeild <= 0->both, nField=1 -> first field, nField=2 -> second field")] 
+	HRESULT MFCut( [in] int _nField, [in] RECT* _pRect, [out] IMFFrame** _ppFrameRes );
+
+	// Copy/Conversion/Mix etc. methods
+	[helpstring("Get clone of frame, see eMFrameClone for details, if _fccPixelFormat is NOT eMFCC_Default and different from original, the video copied even for ref.\n"
+		"Note: If frame is out-of-prcoess, the clone ALSO out-of-process, have to call MakeLocal() for it")] 
+	HRESULT MFClone( [out] IMFFrame** _ppCloneFrame, [in] eMFrameClone _eCloneType, [in] eMFCC _fccPixelFormat );
+
+	[helpstring("Mix frames - overlay _pFrameOverlay frame over this frame, the position is from top-left corner, for 4:2:2 images (e.g. UYVY) horz position aligned by two (e.g. 21->20)\n"
+		"Alpha is transparency: 0.0 - transparent (no mix), 1.0 - solid. By default audio gain is calculated based on overlay size and transparency or can be specified via 'audio_gain' props.\n"
+		"Note: For ARGB32 images, alpha from images used for mix")]
+	HRESULT MFOverlay( [in] IUnknown* _pFrameOverlay, [in] IUnknown* _pFrameMask, [in] int _nPosX, [in] int _nPosY, [in] double _dblAlpha, [in] BSTR _bsPropsList, [in] BSTR _bsAudioBufferID ); 
+
+	[helpstring("Convert frame format (include frame rate conversion) or just scale video frame")] 
+	HRESULT MFConvert( [in] M_AV_PROPS* _pPropsDest, [out] IMFFrame** _ppFrameRes, [out] int* _pnFrameRest, [in] BSTR _bsPropsList, [in] BSTR _bsConverterID );
+
+	[helpstring("Risize frame just scale video frame")] 
+	HRESULT MFResize( [in] eMFCC _fccOutput, [in] int _nWidth, [in] int _nHeight, [in] int _nResizeField, [out] IMFFrame** _ppFrameRes, [in] BSTR _bsPropsList, [in] BSTR _bsConverterID );
+
+	[helpstring("Make transition between frames")] 
+	HRESULT MFTransition( [in] IUnknown* _pFrameFrom, [out] IMFFrame** _ppFrameRes, [in] double _dblPos, [in] BSTR _bsTransition, [in] BSTR _bsPropsList, [in] BSTR _bsConverterID );
+
+	// Data, objects, properties methods
+	[helpstring("Get ANC Data by index")] 
+	HRESULT MFDataGetByIndex( [in] int _nIndex, [out] BSTR* _pbsDataID, [out] LONG* _pcbANCData, [out] LONGLONG* _ppbANCData ); 
+
+	[helpstring("Get ANC Data by four char code e.g. 'C608'")] 
+	HRESULT MFDataGet( [in] BSTR _bsDataID, [out] LONG* _pcbANCData, [out] LONGLONG* _ppbANCData ); 
+
+	[helpstring("Set ANC Data by four char code e.g. 'C608'")] 
+	HRESULT MFDataSet( [in] BSTR _bsDataID, [in] LONG _cbANCData, [in] LONGLONG _pbANCData ); 
+
+	[helpstring("Get attached object by index")] 
+	HRESULT MFObjGetByIndex( [in] int _nIndex, [out] BSTR* _pbsObjID, [out] IUnknown** _ppObj, [in] BOOL _bMakeLocal ); 
+
+	[helpstring("Get attached object by ID")] 
+	HRESULT MFObjGet( [in] BSTR _bsObjID, [out] IUnknown** _ppObj, [in] BOOL _bMakeLocal ); 
+
+	[helpstring("Set attached object by ID")] 
+	HRESULT MFObjSet( [in] BSTR _bsObjID, [in] IUnknown* _pObj ); 
+
+	[helpstring("Get string by index")] 
+	HRESULT MFStrGetByIndex( [in] int _nIndex, [out] BSTR* _pbsStrID, [out] BSTR* _pbsString ); 
+
+	[helpstring("Get string object by ID")] 
+	HRESULT MFStrGet( [in] BSTR _bsStrID, [out] BSTR* _pbsString ); 
+
+	[helpstring("Set string object by ID")] 
+	HRESULT MFStrSet( [in] BSTR _bsStrID, [in] BSTR _bsString ); 
+
+	[helpstring("Get full copy of all data (used internally for transfer data between process)")] 
+	HRESULT MFSave( [out] DWORD* _pcbData, [out,size_is(,*_pcbData)] BYTE** _ppData, [in] eMFrameClone _eSaveType );
+
+	[helpstring("Get full copy of all data (used internally for transfer data between process)")] 
+	HRESULT MFLoad( [in] DWORD _cbData, [in,size_is(_cbData)] BYTE* _pbData, [in] eMFrameClone _eLoadType ); 
+
+	// For async processiong (MFResize, MFConvert, MFTransition)
+	[helpstring("Wait till async produre finished")] 
+	HRESULT MFWaitAsync();
+
+	// For print text or graphics over the text
+	[helpstring("Get full copy of all data (used internally for transfer data between process)")] 
+	HRESULT MFPrint( [in] BSTR _bsText, [in] double _dblTextSize, [in] MF_RECT* _pRect, [in] eMFTextFlags _eMFTextFlags, [in] BSTR _bsExtraParam ); 
+
+	[helpstring("Mix frames - overlay _pFrameOverlay frame over this frame, the position is from top-left corner, for 4:2:2 images (e.g. UYVY) horz position aligned by two (e.g. 21->20)\n"
+		"Alpha is transparency: 0.0 - transparent (no mix), 1.0 - solid. By default audio gain is calculated based on overlay size and transparency or can be specified via 'audio_gain' props.\n"
+		"Note: For ARGB32 images, alpha from images used for mix")]
+	HRESULT MFOverlayRect( [in] IMFFrame* _pFrameOverlay, [in] IMFFrame* _pFrameMask, [in] MF_RECT* _pRect, [in] eMFOverlayFlags _eMFOverlayFlags, [in] double _dblAlpha, [in] BSTR _bsPropsList, [in] BSTR _bsAudioBufferID ); 
+
+	[helpstring("Get video data pointers")] 
+	HRESULT MFVideoGetBytesEx( [out] MF_VID_PTR* _pVideoPtr ); 
+
+	[helpstring("Create stream and save frame data into it")] 
+	HRESULT MFSaveToStream( [out] IStream** _ppStream, [in] eMFrameClone _eSaveType );
+	
+	[helpstring("Add frame data into stream")] 
+	HRESULT MFAddToStream( [in] IStream* _pStream, [in] eMFrameClone _eSaveType );
+	
+	[helpstring("Read frame data from stream")] 
+	HRESULT MFLoadFromStream( [in] IStream* _pStream, [in] eMFrameClone _eLoadType );
+};
+
+
+[
+	object,
+	uuid(4F377264-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFFrameGPU interface"),
+	pointer_default(unique)
+]
+interface IMFFrameGPU : IMFFrame
+{
+	[helpstring("Lock GPU video frame for read/write data")] 
+	HRESULT MFVideoLock( [in] eMFLockType _eType, [out] M_VID_PROPS* _pVidProps, [out] LONGLONG* _plpData );
+
+	[helpstring("Unmap video frame and update changes (for write)")] 
+	HRESULT MFVideoUnlock();
+
+	[helpstring("Get GPU video frame underlying texture")] 
+	HRESULT MFVideoGetTexture( [out] IUnknown** _ppTexture );
+};
+
+cpp_quote("#endif // MFFRAME_DEFINED")
+
+[
+	object,
+	uuid(4F365010-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFFactory interface"),
+	pointer_default(unique)
+]
+interface IMFFactory : IUnknown
+{
+	[helpstring("For interprocess communication - before use frame from other process be sure what you call this method")] 
+	HRESULT MFFrameMakeLocal( [in] IUnknown* _pMFFrame, [out] IMFFrame** _ppFrameLocal, [in] BOOL _bAlwaysClone ); 
+
+	[helpstring("Get clone of frame, see eMFrameClone for details, if _fccPixelFormat is NOT eMFCC_Default and different from original, the video copied even for ref.\n"
+		"Note: If frame is out-of-prcoess, the clone ALSO out-of-process, have to call MakeLocal() for it")] 
+	HRESULT MFFrameClone( [in] IUnknown* _pMFFrame, [out] IMFFrame** _ppFrameClone, [in] eMFrameClone _eCloneType, [in] eMFCC _fccPixelFormat );
+
+	[helpstring("Create frame from memory, _pbVideo could be NULL (0), in this case black frame will be created (or solid color could be specified via _bsPropsList = 'color=black(90)'. If _pAVProps is not specifeid -> created empty frame (can be used ONLY for audio)")] 
+	HRESULT MFFrameCreateFromMem( [in] M_AV_PROPS* _pAVProps, [in] LONGLONG _lpVideo, [in] long _lAudioSamples, [in] LONGLONG _lpAudio, [out] IMFFrame** _ppFrame, [in] BSTR _bsPropsList ); 
+
+	[helpstring("Create frame from image file (BMP, JPG, PNG, TIFF).")] 
+	HRESULT MFFrameCreateFromFile( [in] BSTR _bsFileName, [out] IMFFrame** _ppFrame, [in] BSTR _bsPropsList ); 
+
+	[helpstring("Create frame from HBITMAP")] 
+	HRESULT MFFrameCreateFromHBITMAP( [in] LONGLONG _hBitmap, [out] IMFFrame** _ppFrame, [in] BSTR _bsPropsList ); 
+
+	[helpstring("Create frame from object (e.g. WICBitmapLock, D3D9Surface, MediaSample, NSSBuffer - etc) - just keep reference to external object and use memory pointer.")] 
+	HRESULT MFFrameCreateWrapper( [in] M_VID_PROPS* _pVidProps, [in] DWORD _cbVideo, [in] LONGLONG _lpVideo, [in] IUnknown* _pObject, [out] IMFFrame** _ppFrame ); 
+
+	[helpstring("Create empty frame ")] 
+	HRESULT MFFrameCreatePlain( [in] LONG _cbVideoSize, [out] IMFFrame** _ppFrame ); 
+
+	[helpstring("NOT IMPL Create frame from memory, _pbVideo could be NULL (0), in this case black frame will be created (or solid color could be specified via _bsPropsList = 'color=black(90)'. If _pAVProps is not specifeid -> created empty frame (can be used ONLY for audio)")] 
+	HRESULT MFFrameCreateFromMemEx( [in] M_AV_PROPS* _pAVProps, [in] MF_VID_PTR* _pVideoPtr, [in] long _lAudioSamples, [in] LONGLONG _lpAudio, [out] IMFFrame** _ppFrame, [in] BSTR _bsPropsList ); 
+
+	[helpstring("Create frame from video surface (supported D3D9 textures/surfaces (2D), D3D10, D3D11 textures (2D) - the content of surface copied to internal texture, for use orignal texture/surface use MFFrameCreateWrapper()")] 
+	HRESULT MFFrameCreateFromTexture( [in] M_AV_PROPS* _pAVProps, [in] IUnknown* _pD3DTexture2D, [in] long _lAudioSamples, [in] LONGLONG _lpAudio, [out] IMFFrame** _ppFrame, [in] BSTR _bsPropsList ); 
+};
+
+
+[
+	object,
+	uuid(4F366001-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMAttributes interface"),
+	pointer_default(unique)
+]
+interface IMAttributes : IUnknown
+{
+	[helpstring("Get attributes count")] 
+	HRESULT AttributesGetCount( [out] int* _pnCount );
+
+	[helpstring("Get attributes by index")] 
+	HRESULT AttributesGetByIndex( [in] int _nIndex, [out] BSTR* _pbsName, [out] BSTR* _pbsValue );
+
+	[helpstring("Remove attribute")] 
+	HRESULT AttributesRemove( [in] BSTR _bsName );
+
+	[helpstring("Remove all attribute")] 
+	HRESULT AttributesRemoveAll();
+
+	[helpstring("Set attribute value")] 
+	HRESULT AttributesStringSet( [in] BSTR _bsName, [in] BSTR _bsValue );
+
+	[helpstring("Set attribute bool value")] 
+	HRESULT AttributesBoolSet( [in] BSTR _bsName, [in] BOOL _bValue );
+
+	[helpstring("Set attribute int value")] 
+	HRESULT AttributesIntSet( [in] BSTR _bsName, [in] int _nValue );
+
+	[helpstring("Set attribute double value")] 
+	HRESULT AttributesDoubleSet( [in] BSTR _bsName, [in] double _dblValue );
+
+	[helpstring("Check existence of attribute (note: if some attributes have information, but not set -> default value returned)")] 
+	HRESULT AttributesHave( [in] BSTR _bsName, [out] BOOL* _pbHave, [out] BSTR* _pbsValueOrDefault );
+
+	[helpstring("Get attribute value")] 
+	HRESULT AttributesStringGet( [in] BSTR _bsName, [out] BSTR* _pbsValue );
+
+	[helpstring("Get attribute int value (conversion to int from string performed)")] 
+	HRESULT AttributesIntGet( [in] BSTR _bsName, [out] int* _pnValue );
+
+	[helpstring("Get attribute bool value (conversion to int from string performed)")] 
+	HRESULT AttributesBoolGet( [in] BSTR _bsName, [out] BOOL* _pbValue );
+
+	[helpstring("Get attribute double value (conversion to int from string performed)")] 
+	HRESULT AttributesDoubleGet( [in] BSTR _bsName, [out] double* _pdblValue );
+
+	[helpstring("Parse attibutes string and update current attributes")] 
+	HRESULT AttributesMultipleSet( [in] BSTR _bsAttributesList, [in] eMUpdateType _eUpdateType );
+
+	[helpstring("Save all attributes to string")] 
+	HRESULT AttributesSave( [out] BSTR* _pbsAttributesList );
+
+	[helpstring("Clone attibutes")] 
+	HRESULT AttributesClone( [out] IMAttributes** _ppClone );
+
+	[helpstring("Set multiple attibutes")] 
+	HRESULT AttributesSet( [in] IMAttributes* _pAttributesList, [in] eMUpdateType _eUpdateType );
+
+	[helpstring("Get attribute information count")] 
+	HRESULT AttributesInfoGetCount( [out] int* _pnCount );
+
+	[helpstring("Get attribute information by index")] 
+	HRESULT AttributesInfoGetByIndex( [in] int _nIndex, [out] BSTR* _pbsName );
+
+	[helpstring("Get attribute information (see eMInfoType for details)")] 
+	HRESULT AttributesInfoGet( [in] BSTR _bsName, [in] eMInfoType _eType, [out] BSTR* _pbsInfo );
+
+	[helpstring("Get attribute value information (e.g. help for option)")] 
+	HRESULT AttributesValuesInfoGet( [in] BSTR _bsName, [in] BSTR _bsValue, [in] BSTR _bsType, [out] BSTR* _pbsInfo );
+};
+
+// 
+[
+	object,
+	uuid(4F366002-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMNode interface"),
+	pointer_default(unique)
+]
+interface IMNode : IMAttributes
+{
+	[helpstring("Get node name")] 
+	HRESULT NodeNameGet( [out] BSTR* _pbsName ); 
+
+	[helpstring("Set node name")] 
+	HRESULT NodeNameSet( [in] BSTR _bsName ); 
+
+	[helpstring("Get node value")] 
+	HRESULT NodeValueGet( [out] BSTR* _pbsValue ); 
+
+	[helpstring("Set node value")] 
+	HRESULT NodeValueSet( [in] BSTR _bsValue ); 
+
+	[helpstring("Get node full path (optionally you can specify the root node - this is node from which one you can reach current via path)")] 
+	HRESULT NodePathGet( [out] BSTR* _bsPath, [in] IMNode* _pRoot ); 
+
+	[helpstring("Get node parent (if have)")] 
+	HRESULT NodeParentGet( [out] IMNode** _ppParent ); 
+
+	[helpstring("Destroy this node and remove it's from parents list")] 
+	HRESULT NodeDetach(); 
+
+	[helpstring("Get nodes count")] 
+	HRESULT NodeGetCount( [out] int* _pnCount ); 
+
+	[helpstring("Get node by it's index")] 
+	HRESULT NodeGetByIndex( [in] int _nIndex, [out] BSTR* _pbsName, [out] IMNode** _ppNode ); 
+
+	[helpstring("Add new node by path - the middle nodes will be created.")] 
+	HRESULT NodeAdd( [in] BSTR _bsPath, [in] BSTR _bsValue, [out] IMNode** _ppNode ); 
+
+	[helpstring("Get existing or create new node - the middle nodes will be created")] 
+	HRESULT NodeGet( [in] BSTR _bsPath, [in] BOOL _bCreateNew, [out] IMNode** _ppNode ); 
+
+	[helpstring("Remove child node")] 
+	HRESULT NodeRemove( [in] BSTR _bsPath ); 
+
+	[helpstring("Remove all child nodes, values and (optionally) atibutes")] 
+	HRESULT NodeRemoveAll( [in] BOOL _bRemoveAttributes ); 
+
+	[helpstring("Parse XML string to this node")] 
+	HRESULT NodeParse( [in] BSTR _pbsXMLString, [in] BOOL _bUpdateName ); 
+
+	[helpstring("Save this node as XML string")] 
+	HRESULT NodeSave( [out] BSTR* _pbsXMLString ); 
+
+	[helpstring("Clone node")] 
+	HRESULT NodeClone( [out] IMNode** _ppClone );
+
+	[helpstring("Set node")] 
+	HRESULT NodeSet( [in] IMNode* _pNodeSet, [in] eMUpdateType _eUpdateType );
+
+	[helpstring("Get information about this node")]
+	HRESULT NodeInfoGet( [in] BSTR _bsInfoType, [out] BSTR* _pbsDecription);
+};
+
+// Notification interface 
+[
+	object,
+	uuid(4F366005-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMCallback interface - callback version of IMEvents interface (C++)"),
+	pointer_default(unique)
+]
+interface IMCallback : IUnknown
+{
+		// Called for each input sample (frame), BEFORE items will be overlayed.
+		// Note: This method is SYNC, thus the video stream blocked until this method return	
+		[helpstring("Called on some event occur. See events list for details"
+					"Note: This method is SYNC, so the video stream is blocked while this method is called")] 
+		HRESULT OnEvent(
+						// Callback user data
+						[in] LONGLONG llCallbackUserData,
+						// Channel ID
+						[in] BSTR bsName,
+						//Event name
+						[in] BSTR bsEventName, 
+						//Event param
+						[in] BSTR bsEventParam,
+						//Object - e.g. object what raise the event (see events list for details)
+						[in] IUnknown* pEventObject );
+
+		// Called for each input sample (frame), BEFORE items will be overlayed.
+		// Note: This method is SYNC, thus the video stream blocked until this method return	
+		[helpstring("Called on each input/output sample (frame)." 
+					"Note: This method is SYNC so the video stream is blocked while this method is called")] 
+		HRESULT OnFrame(
+						// Callback user data
+						[in] LONGLONG llCallbackUserData,
+						// Channel ID
+						[in] BSTR bsName,
+						// MFrame object
+						[in] IUnknown* pMFrame );
+
+	};
+
+
+cpp_quote("typedef HRESULT (WINAPI *PFOnEvent)(LONGLONG llCallbackUserData, BSTR bsChannelID, BSTR bsEventName, BSTR bsEventParam, IUnknown* pEventObject );")
+cpp_quote("typedef HRESULT (WINAPI *PFOnFrame)(LONGLONG llCallbackUserData, BSTR bsChannelID, IUnknown* pMFrame );")
+
+
+
+[
+		object,
+		uuid(4F366160-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMPreview Interface"),
+		pointer_default(unique)
+]
+interface IMPreview : IUnknown
+{
+	[helpstring("Enable preview")] 
+	HRESULT PreviewEnable( [in] BSTR _bsChannelID, [in] BOOL _bEnableAudio, [in] BOOL _bEnableVideo );
+
+	[helpstring("Set output (parent) window for preview")] 
+	HRESULT PreviewWindowSet( [in] BSTR _bsChannelID, [in] LONGLONG _hWndParent );
+
+	[helpstring("Enable full screen window")] 
+	HRESULT PreviewFullScreen( [in] BSTR _bsChannelID, [in] BOOL _bFullScreen, [in] int _nDisplay );
+
+	[helpstring("Is full screen enabled")] 
+	HRESULT PreviewIsFullScreen( [in] BSTR _bsChannelID, [in] BOOL* _pbFullScreen, [in] int* _pnDisplay );
+
+	[helpstring("Set audio volume (0: full, -100: silence)")] 
+	HRESULT PreviewAudioVolumeSet( [in] BSTR _bsChannelID, [in] int _nChannel, [in] double _dblAttenuationdB );
+
+	[helpstring("Get audio volume (0: full, -100: silence)")] 
+	HRESULT PreviewAudioVolumeGet( [in] BSTR _bsChannelID, [in] int _nChannel, [out] double* _pdblAttenuationdB );
+
+	[helpstring("Set cursor for video preview window")] 
+	HRESULT PreviewSetCursor( [in] BSTR _bsChannelID, [in] eMCursorType _eCursor );
+
+	[helpstring("Is preview enabled")] 
+	HRESULT PreviewIsEnabled( [in] BSTR _bsChannelID, [out] BOOL* _pbEnabledAudio, [out] BOOL* _pbEnabledVideo );
+
+	[helpstring("Set output (parent) window for preview (for VB6 compatible)")] 
+	HRESULT PreviewWindowSetVB6( [in] BSTR _bsChannelID, [in] LONG _hWndParent );
+};
+
+
+[
+	object,
+	uuid(59CDAE09-351A-4711-B088-7C7963300FE7),
+	pointer_default(unique)
+]
+interface IMWebRTC : IUnknown
+{
+	[helpstring("Connect to signalling server")]
+	HRESULT Login([in] BSTR _bsSigServerURL, [in] BSTR _bsAccessNameOrPropsList, [out] BSTR* _pbsPeerID );
+
+	[helpstring("Disconnect from signalling server, free resources")]
+	HRESULT Logout();
+
+	[helpstring("Connect to peer by ID")]
+	HRESULT GetPeersCount([out] int* _pnCount);
+
+	[helpstring("Connect to peer by ID")]
+	HRESULT GetPeerByIndex([in] int _nIndex, [out] BSTR* _pbsAccessName, [out] BSTR* _pbsPeerID );
+
+	[helpstring("Connect to peer by ID")]
+	HRESULT ConnectToPeer([in] BSTR _bsPeerID);
+
+	[helpstring("Disconnect peer by ID (or disconnect all if _bsPeerID is NULL)")]
+	HRESULT DisconnectPeer([in] BSTR _bsPeerID);
+
+	[helpstring("Send message to connected peer. Use null as peer id to send message to all connected peers")]
+	HRESULT SendMessageToPeer([in] BSTR _bsPeerID, [in] BSTR _bsMessage );
+
+	[helpstring("Set callback (for C++/Delphi events handling), all calls are SYNC")]
+	HRESULT ObjectCallbackSet([in] IMCallback* _pCallback, [in] LONGLONG _llCallbackUserData);
+
+	[helpstring("Set callback function (for C++/Delphi events handling), all calls is SYNC" "The function pointer is PFOnFrame and PFOnEvent - see above")]
+	HRESULT ObjectCallbackSetFunc([in] LONGLONG _lpPFOnEvent, [in] LONGLONG _lpPFOnFrame, [in] LONGLONG _llCallbackUserData);
+
+	[helpstring("Get peer props by id/name")]
+	HRESULT GetPeerProps([in] BSTR _bsPeerID, [out] int* _pnIndex, [out] BSTR* _pbsAccessName, [out] BSTR* _pbsPeerPropsList );
+};
+
+[
+	object,
+	uuid(6EC50BAF-7252-48B1-B8FE-ABAF44B027D6),
+	helpstring("IMFSignalingDTMF Interface"),
+	pointer_default(unique)
+]
+interface IMFSignalingDTMF : IUnknown
+{
+	[helpstring("Add tone (DTMF char) to channel")]
+	HRESULT DTMFToneAdd([in] BSTR _str, [in] BOOL _bReplace);
+
+	[helpstring("Set callback (for C++/Delphi events handling), all calls are SYNC")]
+	HRESULT ObjectCallbackSet([in] IMCallback* _pCallback, [in] LONGLONG _llCallbackUserData);
+
+	[helpstring("Set callback function (for C++/Delphi events handling), all calls is SYNC" "The function pointer is PFOnFrame and PFOnEvent - see above")]
+	HRESULT ObjectCallbackSetFunc([in] LONGLONG _lpPFOnEvent, [in] LONGLONG _lpPFOnFrame, [in] LONGLONG _llCallbackUserData);
+};
+
+[
+	object,
+	uuid(7713D728-4BA5-44D4-8A58-C6CD66C8AB86),
+	helpstring("IMCCDisplay Interface"),
+	pointer_default(unique)
+]
+interface IMCCDisplay : IUnknown {
+};
+
+
+cpp_quote("#ifndef MGCOLORS_STRUCT_DEFINED")
+cpp_quote("#define MGCOLORS_STRUCT_DEFINED")
+
+typedef struct MG_BRIGHT_CONT_PARAM
+{
+	double		dblColorGain;		// [0->Infinite], R = R * dblColorGain 
+									// Default 1
+	double		dblBrightness;		// [-1,+1], R = R + nColorShift;
+									// Default 0
+	double		dblContrast;		// [-1->Infinite], R = 0x80 + (R - 0x80) * (dblContrast+1);
+									// Default 0
+
+	double		dblBlackLevel;		// [0->1), dblVal = 1 / ( 1 - dblBlackLevel ); R = 0x255 - (0x255 - R) * dblVal;	
+									// Default 0
+	double		dblWhiteLevel;		// (0->1], dblVal = 1 / dblWhiteLevel ; R = R * dblVal;	(like Gain level)
+									// Default 1
+} MG_BRIGHT_CONT_PARAM;
+
+typedef struct MG_COLOR_PARAM
+{
+	double		dblYlevel;		// Y level,		[-1,+1]
+								// Default 0
+	double		dblUlevel;		// Cb (B-Y)		[-1,+1]
+								// Default 0
+	double		dblVlevel;		// Cr (R-Y)		[-1,+1]
+								// Default 0
+
+	double		dblUVGain;		// [0->Infinite], U,V = 0x80 + (U,V - 0x80) * dblUVGain 
+								// Default 1
+
+	double		dblYGain;		// [0->Infinite], Y = Y * dblYGain 
+								// Default 1
+} MG_COLOR_PARAM;
+
+cpp_quote("#endif // MGCOLORS_STRUCT_DEFINED")
+[
+	object,
+	uuid(9470BBBC-F37F-47CA-9FA5-F130E9605875),
+	helpstring("IMColors Interface"),
+	pointer_default(unique)
+]
+interface IMColors : IUnknown
+{
+	[helpstring("method SetBrightContParam")]
+	HRESULT SetBrightContParam([in] MG_BRIGHT_CONT_PARAM* _pParam, // New BC param
+		[in] BOOL _bEnable, // Enable/Disable flag
+		[in] int _nMSecForChange // Time for apply chnages
+	);
+	[helpstring("method GetBrightContParam")]
+	HRESULT GetBrightContParam([out] MG_BRIGHT_CONT_PARAM* _pParam, [out] BOOL* _pbEnable);
+
+	[helpstring("method SetColorParam")]
+	HRESULT SetColorParam([in] MG_COLOR_PARAM* _pParam, [in] BOOL _bEnable, [in] int _nMSecForChange);
+	[helpstring("method GetColorParam")]
+	HRESULT GetColorParam([out] MG_COLOR_PARAM* _pParam, [out] BOOL* _pbEnable);
+};
+
+
+[
+	object,
+	uuid(8A3FFE4F-51C3-4056-B407-B3BD7FF62342),
+	helpstring("IMStorage Interface"),
+	pointer_default(unique)
+]
+interface IMStorage : IUnknown
+{
+	/////////////////////////////////////////////////////////////////////////////////////
+	// Initialization methods
+
+	// Set maximum storage size
+	// _llMaxSize  > 0 -> Usual mode
+	// _llMaxSize == 0 -> Memory only
+	// _llMaxSize  < 0 -> One file
+	[helpstring("method SetStorageParam")] HRESULT SetStorageParam([in] LONGLONG _llMaxSize, [in] LONGLONG _llMaxGrowSize, [in] eStorageUnits _eUnits);
+	[helpstring("method GetStorageParam")] HRESULT GetStorageParam([out] LONGLONG* _pllMaxSize, [out] LONGLONG* _pllMaxGrowSize, [out] eStorageUnits* _peUnits);
+	// Set memory buffer size
+	[helpstring("method SetMemoryBufferSize")] HRESULT SetMemoryBufferSize([in] LONG _lBufferSize);
+	[helpstring("method GetMemoryBufferSize")] HRESULT GetMemoryBufferSize([out] LONG* _plBufferSize);
+	// Initialize storage 
+	[helpstring("method Init")] HRESULT Init([in] BSTR _bsFileName, [in] eStorageInitType _eInitType, [out] REFERENCE_TIME* _prtAppendStartTime );
+	[helpstring("method GetFileName")] HRESULT GetFileName([out] BSTR* _pbsFileName );
+
+	// Register storage in ROT - require for access from CoSBEReader 
+	// Note: 
+	//		1. Should be call after Init()
+	//		2. Call RegisterStorage(FALSE) when end using storage (for allow proper close when 
+	//		   all clients disconnect).
+	[helpstring("method RegisterStorage")] HRESULT RegisterStorage([in] BOOL _bRegister );
+	// Close storage (and write all required data into storage info file)
+	[helpstring("method Close")] HRESULT Close();
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	// For data receiving
+	[helpstring("method ReceiveData")] HRESULT ReceiveData([in] DWORD _cbData, [in,size_is(_cbData)] BYTE* _pbData, [in] REFERENCE_TIME* _prtTime, [in] DWORD _dwFlags);
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	// Positions info
+	[helpstring("method GetPos")] HRESULT GetPos([out] LONGLONG* _pllStart, [out] LONGLONG* _pllEnd);
+	[helpstring("method GetTime")] HRESULT GetTime([out] LONGLONG* _prtStart, [out] LONGLONG* _prtEnd);
+	[helpstring("method GetPosForTime")] HRESULT GetPosForTime([in] LONGLONG _rtTime, [out] LONGLONG* _pllPos, [out] LONGLONG* _prtRealTime, [out] LONG* _pcbData);
+	[helpstring("method GetTimeForPos")] HRESULT GetTimeForPos([in] LONGLONG _llPos, [out] LONGLONG* _prtTime );
+	[helpstring("method GetSyncPosForTime")] HRESULT GetSyncPosForTime([in] LONGLONG _rtTime, [out] LONGLONG* _pllPos, [out] LONGLONG* _prtRealTime, [out] LONG* _pcbData);
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	// Reading data
+	[helpstring("method AddReader")] HRESULT AddReader([out] LONG* _pnCookie);
+	[helpstring("method ReadData")] HRESULT ReadData([in] LONG _nCookie, [in] LONGLONG _llPos, [in,out] LONG* _pcbData, [out,size_is(*_pcbData)] BYTE* _pbData);
+	[helpstring("method RemoveReader")] HRESULT RemoveReader([in] LONG _nCookie);
+	[helpstring("method LockPos")] HRESULT LockPos([in] LONG _nCookie, [in] LONGLONG _llPos, [out] LONGLONG* _pllLockedPos);
+	[helpstring("method GetLockPos")] HRESULT GetLockPos([in] LONG _nCookie, [out] LONGLONG* _pllLockedPos);
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	// Reset data
+	[helpstring("method Reset")] HRESULT Reset();
+
+	/////////////////////////////////////////////////////////////////////////////////////
+	// Auxiliary data
+	[helpstring("method SetAuxData")] HRESULT SetAuxData([in] BSTR _bsDataName, [in] LONG _cbAuxData, [in,size_is(_cbAuxData)] BYTE* _pbAuxData);
+	[helpstring("method GetAuxData")] HRESULT GetAuxData([in] BSTR _bsDataName, [out] LONG* _pcbAuxData, [out,size_is(,*_pcbAuxData)] BYTE** _ppbAuxData );
+	[helpstring("method GetAuxDataCount")] HRESULT GetAuxDataCount([out] int* _pnCount );
+	[helpstring("method GetAuxDataName")] HRESULT GetAuxDataName([in] int _nIndex, [out] BSTR* _pbsName );
+};
+
+//////////////////////////////////////////////////////////////////////////
+// MPlatform interfaces
+// 
+
+
+// Common interface for frame
+[
+	object,
+	uuid(4F366000-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFrame interface"),
+	pointer_default(unique)
+]
+interface IMFrame : IUnknown
+{
+	[helpstring("Get media properties")] 
+	HRESULT FrameAVPropsGet( [out] M_AV_PROPS* _pProps ); 
+
+	[helpstring("Update media properties (e.g. interlace, scale-type, format, etc.)")] 
+	HRESULT FrameAVPropsSet( [in] M_AV_PROPS* _pProps ); 
+
+	[helpstring("Get time")] 
+	HRESULT FrameTimeGet( [out] M_TIME* _pTime ); 
+
+	[helpstring("Set time")] 
+	HRESULT FrameTimeSet( [in] M_TIME* _pTime ); 
+
+	[helpstring("Get audio data pointer")] 
+	HRESULT FrameAudioGetBytes( [out] LONG* _pcbSize, [out] LONGLONG* _ppbAudio ); 
+
+	[helpstring("Get video data pointer")] 
+	HRESULT FrameVideoGetBytes( [out] LONG* _pcbSize, [out] LONGLONG* _ppbVideo ); 
+
+	[helpstring("Get video HBITMAP - the returned bitmap should be free via WinAPI ::DeleteObject() call.")] 
+	HRESULT FrameVideoGetHbitmap( [out] LONGLONG* _pcpHBitmap ); 
+
+	[helpstring("Save video to file. Type of file deduced from extension (*.png, *.jpg, *.bmp, *.tga, *.tiff supported)")] 
+	HRESULT FrameVideoSaveToFile( [in] BSTR _bsFileName ); 
+
+	[helpstring("Save audio to file (*.wav file used, if file exist and have WAV format -> add audio to the end of file, note: format not checked)")] 
+	HRESULT FrameAudioSaveToFile( [in] BSTR _bsFileName, [in] BOOL _bAppend); 
+
+	[helpstring("Get ANC Data by index")] 
+	HRESULT FrameDataGetByIndex( [in] int _nIndex, [out] LONG* _pnDataFCC, [out] LONG* _pcbANCData, [out] LONGLONG* _ppbANCData ); 
+
+	[helpstring("Get ANC Data by four char code e.g. 'C608'")] 
+	HRESULT FrameDataGet( [in] LONG _nDataFCC, [out] LONG* _pcbANCData, [out] LONGLONG* _ppbANCData ); 
+
+	[helpstring("Set ANC Data by four char code e.g. 'C608'")] 
+	HRESULT FrameDataSet( [in] LONG _nDataFCC, [in] LONG _cbANCData, [in] LONGLONG _pbANCData ); 
+
+	[helpstring("Get clone of video frame, see eMFrameClone for details, if _fccPixelFormat is NOT eMFCC_Default and different from original, the video copied even for ref.\n"
+		"Note: If frame is out-of-prcoess, the clone ALSO out-of-process, have to call MakeLocal() for it")] 
+	HRESULT FrameClone( [out] IMFrame** _ppCloneFrame, [in] eMFrameClone _eCloneType, [in] eMFCC _fccPixelFormat );
+
+	[helpstring("Cut out part of video frame, without memory copy.")] 
+	HRESULT FrameCut( [in] int _nField, [in] RECT* _pRect, [out] IMFrame** _ppFrameRes );
+
+	[helpstring("Convert frame format or just scale video frame")] 
+	HRESULT FrameConvert( [in] M_VID_PROPS* _pVidPropsDest, [out] IMFrame** _ppFrameRes, [in] BSTR _bsPropsList  );
+
+	[helpstring("Overlay (mix) frames over specified frame (_pFrameBase) with alpha, the position is from top-left corner, for 4:2:2 images (e.g. UYVY) horz position aligned by two (e.g. 21->20)\n"
+		"Alpha is transparency: 0.0 - transparent (no mix), 1.0 - solid.\n"
+		"Note: For ARGB32 images, alpha from images used for mix")]
+	HRESULT FrameOverlay( [in] IMFrame* _pFrameOver, [in] int _nPosX, [in] int _nPosY, [in] double _dblAlpha, [in] BSTR _bsPropsList ); 
+
+	[helpstring("Release frame buffer, do it for ALL frames received by event in .Net application !!!")]
+	HRESULT FrameRelease();
+
+};
+
+// Common interface for get/set various properties
+[
+	object,
+	uuid(4F365000-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFrames interface"),
+	pointer_default(unique)
+]
+interface IMFrames : IUnknown
+{
+	[helpstring("For interprocess communication - before use frame from other process be sure what you call this method")] 
+	HRESULT FramesMakeLocal( [in] IMFrame* _ppFrame, [out] IMFrame** _ppFrameLocal, [in] BOOL _bMakeRef ); 
+
+	[helpstring("Create frame with specifed maximum video storage size (video+anc)")] 
+	HRESULT FramesCreate( [in] int _cbVideoSize, [in] BSTR  _bsProps, [out] IMFrame** _ppFrame ); 
+
+	[helpstring("Create frame from memory, _pbVideo could be NULL (0), in this case black frame will be created.")] 
+	HRESULT FramesCreateFromMem( [in] M_VID_PROPS* _pVidProps, [in] LONGLONG _pbVideo, [out] IMFrame** _ppFrame, [in] BSTR _bsPropsList ); 
+
+	[helpstring("Create frame from image file (BMP, JPG, PNG, TIFF).")] 
+	HRESULT FramesCreateFromFile( [in] BSTR _bsFileName, [out] IMFrame** _ppFrame, [in] BSTR _bsPropsList ); 
+
+	[helpstring("Create frame from HBITMAP")] 
+	HRESULT FramesCreateFromHBITMAP( [in] LONGLONG _hBitmap, [out] IMFrame** _ppFrame, [in] BSTR _bsPropsList ); 
+
+	[helpstring("Create frame from D3D surface (NOT IMPL)")]
+	HRESULT FramesCreateFromSurface( [in] IUnknown* _pSurface, [out] IMFrame** _ppFrame, [in] BSTR _bsPropsList );
+};
+
+// Common interface for properties get/set
+[
+	object,
+	uuid(4F366020-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMProps common Interface for properties get/set)"),
+	pointer_default(unique)
+]
+interface IMProps : IUnknown
+{
+	[helpstring("Set properties (the XML format supported).")] 
+	HRESULT PropsSet( [in] BSTR _bsPropName, [in] BSTR _bsPropValue ); 
+		
+	[helpstring("Get properties (the XML format supported).")] 
+	HRESULT PropsGet( [in] BSTR _bsPropName, [out] BSTR* _pbsPropValue ); 
+
+	[helpstring("Get properties count")] 
+	HRESULT PropsGetCount( [in] BSTR _bsNodeName, [out] int* _pnCount ); 
+
+	[helpstring("Get property by it's index")] 
+	HRESULT PropsGetByIndex( [in] BSTR _bsNodeName, [in] int _nIndex, [out] BSTR* _pbsPropName, [out] BSTR* _pbsPropValue, [out] BOOL* _pbNode ); 
+
+	[helpstring("Remove props")] 
+	HRESULT PropsRemove( [in] BSTR _bsPropName ); 
+
+	[helpstring("Get property information (e.g. type, option values, hlp string etc. - see details in eMInfoType)")] 
+	HRESULT PropsInfoGet( [in] BSTR _bsPropName, [in] eMInfoType _eType, [out] BSTR* _pbsInfo ); 
+
+	[helpstring("Get property fixed values(options) count")] 
+	HRESULT PropsOptionGetCount( [in] BSTR _bsPropName, [out] int* _pnOptionCount ); 
+
+	[helpstring("Get property fixed value(option) information")] 
+	HRESULT PropsOptionGetByIndex( [in] BSTR _bsPropName, [in] int _nOptionIdx, [out] BSTR* _pbsOptionValue, [out] BSTR* _pbsHelp ); 
+
+	[helpstring("Set property fixed value(option) by it's index")] 
+	HRESULT PropsOptionSetByIndex( [in] BSTR _bsPropName, [in] int _nOptionInx ); 
+
+	[helpstring("Get property fixed value(option) index and help")] 
+	HRESULT PropsOptionGet( [in] BSTR _bsPropName, [out] int* _pnOptionIdx, [out] BSTR* _pbsOptionValue, [out] BSTR* _pbsHelp ); 
+};
+
+[
+	object,
+	uuid(4F366030-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMPersist common Interface for configuration save/load"),
+	pointer_default(unique)
+]
+interface IMPersist : IUnknown
+{
+	[helpstring("Save configuration data to the file.")] 
+	HRESULT PersistSaveToFile([in] BSTR _bsObject, [in] BSTR _bsFileName, [in] BSTR _bsSaveParam );
+
+	[helpstring("Save configuration data to string")] 
+	HRESULT PersistSaveToString([in] BSTR _bsObject, [out] BSTR* _pbsXMLDesc, [in] BSTR _bsSaveParam );
+
+	[helpstring("Load data from string or from file")] 
+	HRESULT PersistLoad([in] BSTR _bsObject, [in] BSTR _bsXMLDescOrFile, [in] BSTR _bsLoadParam );
+};
+
+[
+		object,
+		uuid(4F366100-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMObject Interface - implemented by Base Media Objects"),
+		pointer_default(unique)
+]
+interface IMObject : IUnknown
+{
+	[helpstring("Set object name")] 
+	HRESULT ObjectNameSet( [in] BSTR _bsName);
+
+	[helpstring("Get object name")] 
+	HRESULT ObjectNameGet( [out] BSTR* _pbsName);
+
+	[helpstring("Initialize and start object. For renderer or capture object pass source object interface as first parameter.")] 
+	HRESULT ObjectStart( [in] IUnknown* _pSource );
+
+	[helpstring("Stop and close object")] 
+	HRESULT ObjectClose();
+
+	[helpstring("Get object state")] 
+	HRESULT ObjectStateGet( [out] eMState* _peState );
+
+	[helpstring("Set callback (for C++ code, for other languages use events.), for switch sync/unsync callback use on_event.sync, on_frame.sync")] 
+	HRESULT ObjectCallbackSet( [in] IMCallback* _pCallback, [in] LONGLONG _llCallbackUserData );
+
+	[helpstring("Set callback function (for C++ code, for other languages use events.), for switch sync/unsync callback use on_event.sync, on_frame.sync"
+		"The function pointer is PFOnFrame and PFOnEvent - see above")] 
+	HRESULT ObjectCallbackSetFunc( [in] LONGLONG _lpPFOnEvent, [in] LONGLONG _lpPFOnFrame, [in] LONGLONG _llCallbackUserData );
+
+	[helpstring("Execute special command")] 
+	HRESULT ObjectCommandExecute( [in] BSTR _bsCommand, [in] BSTR _bsParam, [in] IUnknown* _pParamUnk, [out] BSTR* _pbsReturn );
+
+	[helpstring("Create virtual sources")] 
+	HRESULT ObjectVirtualSourceCreate( [in] BOOL _bCreate, [in] BSTR _bsName, [in] BSTR _bsParam );
+
+	[helpstring("Object frame get")] 
+	HRESULT ObjectFrameGet( [out] IMFrame** _ppFrame, [in] BSTR _bsParam );
+
+	[helpstring("Object get internal component interface - work only for MLive (DirectShow/Decklink)")] 
+	HRESULT ObjectGetInternal( [in] BSTR _bsType, [out] IUnknown** _ppObject );
+};
+
+[
+		object,
+		uuid(4F366105-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMFormat Interface -  for set audio/video formats of media objects"),
+		pointer_default(unique)
+]
+interface IMFormat : IUnknown
+{
+	// Video
+	[helpstring("Get video formats count")] 
+	HRESULT FormatVideoGetCount( [in] eMFormatType _eFormatType, [out] int* _pnCount);
+
+	[helpstring("Get video format of device by it's index")] 
+	HRESULT FormatVideoGetByIndex( [in] eMFormatType _eFormatType, [in] int _nIndex, [out] M_VID_PROPS* _pVidProps, [out] BSTR* _pbsName );
+
+	[helpstring("Set output video format for object. Note: The _bOriginal used ONLY for devices (MLive), for other objects this parameter ignored")] 
+	HRESULT FormatVideoSet( [in] eMFormatType _eFormatType, [in] M_VID_PROPS* _pVidProps );
+
+	[helpstring("Get currently set video format. Note: The _bOriginal used ONLY for files and devices (MFile, MLive), for other objects this parameter ignored")]
+	HRESULT FormatVideoGet( [in] eMFormatType _eFormatType, [out] M_VID_PROPS* _pVidProps, [out] int* _pnIndex, [out] BSTR* _pbsName );
+
+	// Audio
+	[helpstring("Get audio formats (orignal for MLive) number")] 
+	HRESULT FormatAudioGetCount( [in] eMFormatType _eFormatType, [out] int* _pnCount);
+
+	[helpstring("Get audio format of device by it's index")] 
+	HRESULT FormatAudioGetByIndex( [in] eMFormatType _eFormatType, [in] int _nIndex, [out] M_AUD_PROPS* _pAudProps, [out] BSTR* _pbsName );
+
+	[helpstring("Set output audio format for object. Note: The _bOriginal used ONLY for devices (MLive), for other objects this parameter ignored")] 
+	HRESULT FormatAudioSet( [in] eMFormatType _eFormatType, [in] M_AUD_PROPS* _pAudProps );
+
+	[helpstring("Get currently set audio format. Note: The _bOriginal used ONLY for files and devices (MFile, MLive), for other objects this parameter ignored")]
+	HRESULT FormatAudioGet( [in] eMFormatType _eFormatType, [out] M_AUD_PROPS* _pAudProps, [out] int* _pnIndex, [out] BSTR* _pbsName );
+};
+
+[
+	object,
+	uuid(4F366111-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMAudioTrack Interface -  for control audio properties"),
+	pointer_default(unique)
+]
+interface IMAudioTrack: IUnknown
+{
+	[helpstring("Get audio track loudness information. The _pAudioLoudnessOrg is according to input order and channels count,"
+		"The _pAudioLoudnessOut is according to output order and channels count, and include mixing if so.")]
+	HRESULT TrackLoudnessGet( [out] M_AUDIO_TRACK_LOUDNESS* _pAudioLoudnessOrg, [out] M_AUDIO_TRACK_LOUDNESS* _pAudioLoudnessOut );
+
+	[helpstring("Set audio track mode (see eMAudioTrackMode for details), _nAddToTrack used ONLY for eMAT_Enabled_AddTo and eMAT_Disabled_AddTo modes.")] 
+	HRESULT TrackModeSet( [in] eMAudioTrackMode _eMode, [in] int _nAddToTrack, [in] double _dblAddGain );
+
+	[helpstring("Get audio track mixing (disables, exclusive, enabled, mix with other track)"
+		"Note: If track mix e.g. track #3 mix with track #2 -> output ONLY track #2, track #3 ")]
+	HRESULT TrackModeGet( [out] eMAudioTrackMode* _peMode, [out] int* _pnAddToTrack, [out] double* _pdblAddGain );
+
+	[helpstring("Get number of track input channel, input channel index, output channels and index of this track first channel in resulting output audio")]
+	HRESULT TrackIsVirtual( [out] BOOL* _pbVirtual, [out] int* _pnSourceTrack, [out] BSTR* _pbsChannelsSet );
+
+	[helpstring("Get number of track input channel, input channel index, output channels and index of this track first channel in resulting output audio")]
+	HRESULT TrackChannelsGet( [out] int* _pnInputChannels, [out] int* _pnOutputChannelIdx, [out] int* _pnOutputChannels );
+
+	[helpstring("Set number of output channels, if number channels less than input (e.g. 5.1 -> stereo) the channels is mixed together,"
+		"for prevent channel mixing, mute the undesired channel.")]
+	HRESULT TrackChannelsSet( [in] int _nOutputChannels );
+
+	[helpstring("Change output order if this track(e.g. for make input track #1 as output track #0)")]
+	HRESULT TrackOrderSet( [in] int _nOrder );
+
+	[helpstring("Get output order if this track.")]
+	HRESULT TrackOrderGet( [out] int* _pnOrder );
+
+	[helpstring("Change specified channels order (e.g. for swap left and right channels). Note: TrackGainSet/Get(), TrackMuteSet/Get() use original channels order.")]
+	HRESULT TrackChannelOrderSet( [in] BOOL _bInput, [in] int _nChannelIdx, [in] int _nOrder );
+
+	[helpstring("Get specified channels order. Note: TrackGainSet/Get(), TrackMuteSet/Get() use original channels order.")]
+	HRESULT TrackChannelOrderGet( [in] BOOL _bInput, [in] int _nChannelIdx, [out] int* _pnOrder );
+
+	[helpstring("Set audio gain for specified channel or for whole track (use nChannel == -1 for set gain for ALL channels)"
+		"Note: gain value in dB: -60 dB min gain (for mute audio), 0 dB no changes, +60 dB max gain")]
+	HRESULT TrackGainSet( [in] int _nChannel, [in] double _dblGain, [in] double _dblTimeForChange );
+
+	[helpstring("Get audio gain for specified channel"
+		"Note: gain value in dB: -60 dB min gain (for mute audio), 0 dB no changes, +60 dB max gain")]
+	HRESULT TrackGainGet( [in] int _nChannel, [out] double* _pdblGain );
+
+	[helpstring("Mute specifed channel")]
+	HRESULT TrackMuteSet( [in] int _nChannel, [in] BOOL _bMute, [in] double _dblTimeForChange );
+
+	[helpstring("Return is the specifed channel muted")]
+	HRESULT TrackMuteGet( [in] int _nChannel, [out] BOOL* _pbMute );
+};
+
+[
+	object,
+	uuid(4F366110-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMAudio Interface -  for control audio properties"),
+	pointer_default(unique)
+]
+interface IMAudio : IUnknown
+{
+	[helpstring("Get input audio channels count, track split bits (non zero bit mean track channels end) and split string (like '2, 6, 4' -> mean 2Ch track, 6Ch track and 4Ch track)")] 
+	HRESULT AudioSplitStringGet( [out] BSTR* _pbsSplitString, [out] int* _pnChannels );
+
+	[helpstring("Set split track mask like '2,6,2' (e.g. if tracks not detected, tracks information wrong or for custom mix)")] 
+	HRESULT AudioSplitStringSet( [in] BSTR _bsSplitString );
+
+	[helpstring("Get input audio channels, track count and track mask")] 
+	HRESULT AudioTracksSetCount( [in] int _nTracks );
+
+	[helpstring("Get input audio channels, track count and track mask")] 
+	HRESULT AudioTracksGetCount( [out] int* _pnTracks );
+
+	[helpstring("Get input track by index.")] 
+	HRESULT AudioTrackGetByIndex( [in] int _nIndex, [out] BSTR* _pbsDesc, [out] IMAudioTrack** _ppTrack );
+
+	[helpstring("Set output number of channels per audio track (for all tracks): Usefull for MultipleTrack mode, set 0 for use original number of channels per track")] 
+	HRESULT AudioChannelsPerTrackSet( [in] int _nChannelsPerTrack );
+
+	[helpstring("Get output number of channels per audio track, 0 - use original number of tracks")] 
+	HRESULT AudioChannelsPerTrackGet( [out] int* _pnChannelsPerTrackSet );
+
+	[helpstring("Add 'virtual' audio track with selected subset of channels e.g. for from 2 tracks make 3 tracks: 1, 2, and 1 mix with 2\n"
+		"Use _bsUseChannels for select only specified channels e.f. AudioTrackAdd(2, '1,3', 'My Track', out pTrack); - for make track from track 2 channels 0 and 2\n"
+		"Use _nSourceTrack == -1 for select channels from all tracks (or for virtual track from ALL tracks)")] 
+	HRESULT AudioTrackAdd( [in] int _nSourceTrack, [in] BSTR _bsUseChannels, [in] BSTR _bsDesc, [out] IMAudioTrack** _ppTrack );
+
+	[helpstring("Remove 'virtual' audio track.")] 
+	HRESULT AudioTrackRemove( [in] IMAudioTrack* _pTrack );
+};
+
+//////////////////////////////////////////////////////////////////////////
+/*
+<audio channels=12 bit=16 rate=48000 tracks=3>
+	<track name='' channels-in=4 order=1 enable=false/>
+	<track name='' channels-in=6 order=0 enable=true/>
+	<track name='' channels-in=2 order=2 />
+</audio>
+
+
+*/
+[
+		object,
+		uuid(4F366140-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMReceiver Interface - implemented by Media Objects"),
+		pointer_default(unique)
+]
+interface IMReceiver : IUnknown
+{
+	// User call methods
+	[helpstring("Add media sender by object")] 
+	HRESULT ReceiverChannelAdd( [in] IUnknown* _pSender, [in,out] BSTR* _pbsChannelID, [in] BSTR _bsXMLParam );
+
+	[helpstring("Add media sender by name")] 
+	HRESULT ReceiverChannelAddByName( [in] BSTR _bsSenderName, [in,out] BSTR* _pbsChannelID, [in] BSTR _bsXMLParam );
+
+	[helpstring("Remove media sender")] 
+	HRESULT ReceiverChannelRemove( [in] BSTR _bsChannelID );
+
+	// For channels enumerate
+	[helpstring("Get number of connected senders")] 
+	HRESULT ReceiverChannelGetCount( [out] int* _pnCount );
+
+	[helpstring("Get sender information")] 
+	HRESULT ReceiverChannelGetByIndex( [in] int _nIndex, [out] BSTR* _pbsChannelID, [out] BSTR* _pbsSenderName, [out] BSTR* _pbsTransName, [out] BSTR* _pbsXMLParam );
+
+	// Direct data receive
+	[helpstring("Receive audio/video frame")] 
+	HRESULT ReceiverPutFrame( [in] BSTR _bsChannelID, 
+		[in] IMFrame* _pFrame );
+
+	[helpstring("Receive Flush")] 
+	HRESULT ReceiverPutFlush( [in] BSTR _bsChannelID );
+
+	[helpstring("Receive EOS")] 
+	HRESULT ReceiverPutEOS( [in] BSTR _bsChannelID, [in] BOOL _bRemoveChannel );
+};
+
+////////////////////////////////////////////////////////////////////////
+// IMSender
+// [
+// 		object,
+// 		uuid(4F366150-473F-4ad5-A5C2-428FE0C8E03E),
+// 		helpstring("IMSender Interface - implemented by media providers (usually utilized by other object and not required to be called)"),
+// 		pointer_default(unique)
+// ]
+// interface IMSender : IUnknown
+// {
+// 	[helpstring("Add receiver")] 
+// 	HRESULT SenderChannelAdd( [in] IUnknown* _pReceiver, [in] BSTR _bsChannelID, [in] BSTR _bsXMLParam, [out] BOOL* _pbSenderRunning );
+// 
+// 	[helpstring("Remove receiver")] 
+// 	HRESULT SenderChannelRemove( [in] BSTR _bsChannelID );
+// 
+// 	// For sender enumerate
+// 	[helpstring("Get number of connected receivers")] 
+// 	HRESULT SenderChannelGetCount( [out] int* _pnCount );
+// 
+// 	[helpstring("Get receiver information by it's index")] 
+// 	HRESULT SenderChannelGetByIndex( [in] int _nIndex, [out] BSTR* _pbsChannelID, [out] BSTR* _pbsXMLParam );
+// };
+
+[
+	object,
+	uuid(4F366155-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMSenders Interface - implemented by media providers"),
+	pointer_default(unique)
+]
+interface IMSenders : IUnknown
+{
+	// For sender enumerate
+	[helpstring("Get number of senders")] 
+	HRESULT SendersGetCount( [out] int* _pnCount );
+
+	[helpstring("Get sender information by it's index")] 
+	HRESULT SendersGetByIndex( [in] int _nIndex, [out] BSTR* _pbsName, [out] M_VID_PROPS* _pVidProps, [out] M_AUD_PROPS* _pAudProps );
+
+	[helpstring("Get sender interface by it's index")] 
+	HRESULT SendersGet( [in] BSTR _bsName, [out] IUnknown** _ppSender );
+};
+
+
+
+[
+		object,
+		uuid(4F366170-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMFile Interface - implemented by file source"),
+		pointer_default(unique)
+]
+interface IMFile : IUnknown
+{	
+	[helpstring("Set file name or change current playing file.\n"
+				"The IN (start), OUT (stop) points specified via parameters (in seconds):\n"
+				"e.g. 'in=10.0 out=20.0'\n"
+				"For insert break the file playback (play the new file and after file reach the end, resume playback of interrupted file),\n"
+				"use BREAK param: e.g. 'in=10.0 out=20.0 break=true'")] 
+	HRESULT FileNameSet( [in] BSTR _bsFile, [in] BSTR _bsParam );
+
+	[helpstring("Get file name, user-set properties and file information.")] 
+	HRESULT FileNameGet( [out] BSTR* _pbsFile );
+
+	[helpstring("Set In and Out points, if _dblOut less than _dblIn -> the out point reset")] 
+	HRESULT FileInOutSet( [in] double _dblIn, [in] double _dblOut );
+
+	[helpstring("Get In and Out points values, if _dblOut less than _dblIn -> the out not specified")] 
+	HRESULT FileInOutGet( [out] double* _pdblIn, [out] double* _pdblOut, [out] double* _pdblDuration );
+
+	[helpstring("Set position of file, use _dblPreroll = 0.5...3.0 seconds for more accurate position")] 
+	HRESULT FilePosSet( [in] double _dblPos, [in] double _dblPreroll );
+
+	[helpstring("Get position of file: file")] 
+	HRESULT FilePosGet( [out] double* _pdblFilePos );
+
+	[helpstring("Start playing file, initialize object if necessury.")] 
+	HRESULT FilePlayStart();
+
+	[helpstring("Pause file playback for _dblSeconds seconds (for classic Pause() use 0 seconds), if file already paused -> show the next frame/field")] 
+	HRESULT FilePlayPause( [in] double _dblSeconds );
+
+	[helpstring("Stop playing file for _dblSeconds seconds (for classic Stop() use 0 seconds)")] 
+	HRESULT FilePlayStop( [in] double _dblSeconds );
+
+	[helpstring("Get file state (close,stopped,paused,running) and return remaining time of state (e.g. for Pause() with non-zero time)")] 
+	HRESULT FileStateGet( [out] eMState* _peState, [out] double* _pdblTimeRemain );
+
+	[helpstring("Set file playing rate (negative for reverse playback)")] 
+	HRESULT FileRateSet( [in] double _dblRate );
+
+	[helpstring("Get file playing rate (negative for reverse playback)")] 
+	HRESULT FileRateGet( [out] double* _pdblRate);
+
+	[helpstring("Get video frame from file at specified position, use _dblPreroll = 0.5...3.0 seconds for more accurate position")] 
+	HRESULT FileFrameGet( [in] double _dblPos, [in] double _dblPreroll, [out] IMFrame** _ppFrame );
+
+	// Methods for Timecode support
+
+	// Note: By default (if not specified via eMTimecodeFlags) for files used origial file frame rate, 
+	// for playlist you should specify the frame rate via eMTimecodeFlags
+	[helpstring("Set In and Out points (via timecode), if _dblOut less than _dblIn -> the out point reset")] 
+	HRESULT FileInOutSetTC( [in] M_TIMECODE* _pTCIn, [in] M_TIMECODE* _pTCOut );
+
+	// Note: By defaul returning timecode is NDF (see eMTimecodeFlags for details), and frame rate flags set.
+	[helpstring("Get In and Out points values (via timecode), if out point not specified -> return the last frame timecode")] 
+	HRESULT FileInOutGetTC( [out] M_TIMECODE* _pTCIn, [out] M_TIMECODE* _pTCOut, [out] BOOL* _pbOutSpecified );
+
+	// Note: By default (if not specified via eMTimecodeFlags) for files used origial file frame rate, 
+	// for playlist you should specify the frame rate via eMTimecodeFlags
+	[helpstring("Set position of file, (via timecode)")] 
+	HRESULT FilePosSetTC( [in] M_TIMECODE* _pTC );
+
+	// Note: By defaul returning timecode is NDF (see eMTimecodeFlags for details) and frame rate flags set.
+	[helpstring("Get position of file: file (via timecode)")] 
+	HRESULT FilePosGetTC( [out] M_TIMECODE* _pTC );
+
+	// Note: By default (if not specified via eMTimecodeFlags) for files used origial file frame rate, 
+	// for playlist you should specify the frame rate via eMTimecodeFlags
+	[helpstring("Get video frame from file at specified position")] 
+	HRESULT FileFrameGetByTC( [in] M_TIMECODE* _pTC, [out] IMFrame** _ppFrame );
+};
+
+[
+		object,
+		uuid(4F366172-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMItem Interface - implemented by playlist, break, scheduler items and commands"),
+		pointer_default(unique)
+]
+interface IMItem : IMFile
+{
+	[helpstring("Get playlist item type (MFile, MLive or MPlaylist).")] 
+	HRESULT ItemTypeGet( [out] eMItemType* _peType );
+
+	[helpstring("Set playlist item start absolute time")] 
+	HRESULT ItemStartTimeSet( [in] M_DATETIME* _pStartTime, [in] eMStartType _eStartType );
+
+	[helpstring("Get playlist item start and stop absolute time.")] 
+	HRESULT ItemTimesGet( [out] M_DATETIME* _pStartTime, [out] M_DATETIME* _pStopTime, [out] eMStartType* _peStartType );
+
+	[helpstring("Get playlist item play time (file duration - in/out points + breaks time)")] 
+	HRESULT ItemPlayTimeGet( [out] double* _pdblPlayTime );
+
+	[helpstring("Set command properties (valid only for commands)")] 
+	HRESULT ItemCommandSet( [in] BSTR _bsCommand, [in] BSTR _bsParam, [in] IUnknown* _pTargetObject );
+
+	[helpstring("Get command properties (valid only for commands)")] 
+	HRESULT ItemCommandGet( [out] BSTR* _pbsCommand, [out] BSTR* _pbsParam, [out] IUnknown** _ppTargetObject );
+
+	[helpstring("Get playlist item inner object (MFile, MLive or MPlaylist).")] 
+	HRESULT ItemInnerGet( [out] IUnknown** _ppInnerObject );
+
+	[helpstring("Execute command")] 
+	HRESULT ItemCommandExecute( [in] IUnknown* _pSourceObject );
+
+	[helpstring("Get playlist item position and index")] 
+	HRESULT ItemPosGet( [out] double* _pdblPlayPos, [out] int* _pnPlaylistIndex );
+};
+
+[
+		object,
+		uuid(4F366175-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMPlaylist Interface - implemented by MPlaylist object"),
+		pointer_default(unique)
+]
+interface IMPlaylist : IUnknown
+{	
+	// Return the number of files in playlist 
+	[helpstring("Return the number of files in playlist and total playliost duration (in seconds)")] 
+	HRESULT PlaylistGetCount( [out] int* _pnCount, [out] double* _pdblTotalDuration );
+
+	// Return the file name and MFile interface by playlist index
+	[helpstring("Get file and file time offset from start by playlist index (use -1 for current/break file, -2 for current/cued, -3 for cued (only if breaks) )")] 
+	HRESULT PlaylistGetByIndex( [in] int _nIndex, [out] double* _pdblFileOffset, [out] BSTR* _pbsPath, [out] IMItem** _ppPlaylistItem );
+
+	// PlaylistAdd( newfile, -1 ) -> [first]..[last][newfile] insert at end  
+	// PlaylistAdd( newfile, 0 ) -> [newfile][first]..[last] insert at first position
+	// PlaylistAdd( newfile, 1 ) -> [first][newfile]..[last] insert at second position
+	// PlaylistAdd( newfile, -2 ) -> [first]...[newfile][last] insert at last but one position
+	// PlaylistAdd( newfile, -3 ) -> [first]...[newfile][pre-last][last] insert at last but two position
+	[helpstring("Insert new file into playlist at specified position."				
+				"PlaylistAdd( newfile, 0 ) -> [newfile][first]..[last] insert new file at first position"
+				"PlaylistAdd( newfile, 1 ) -> [first][newfile]..[last] insert new file at second position"
+				"PlaylistAdd( newfile, -1 ) -> [first]..[last][newfile] insert new file at the end of playlist"  
+				"PlaylistAdd( newfile, -2 ) -> [first]...[newfile][last] insert new file at second position from the end of playlist"
+				"PlaylistAdd( newfile, -3 ) -> [first]...[newfile][pre-last][last] insert new file at third position from the end of playlist")] 
+	HRESULT PlaylistAdd( [in] IUnknown* _pExternOrRef, [in] BSTR _bsPath, [in] BSTR _bsParam, [in,out] int* _pnIndex, [out] IMItem** _ppPlaylistItem );
+
+	[helpstring("Add command to playlist")] 
+	HRESULT PlaylistCommandAdd( [in] BSTR _bsCommand, [in] BSTR _bsParam, [in] IUnknown* _pTargetObject, [in,out] int* _pnIndex, [out] IMItem** _ppPlaylistItem );
+
+	[helpstring("Remove file/live from playlist")] 
+	HRESULT PlaylistRemove( [in] IMItem* pFile );
+
+	// Remove( 5, 0 ) -> remove 5 item
+	// Remove( 5, 1 ) -> remove 5 & 6 item
+	// Remove( 5, -1 ) -> remove 4 & 5 item
+	// Remove( 5, 10 ) -> remove 5..15 item
+	// Remove( 5, -10 ), Remove( 5, -5 ) -> remove 0..5 item
+	[helpstring("Remove multiple items from playlist by index"
+				"Remove( 5, 0 ) -> remove 5 item"
+				"Remove( 5, 1 ) -> remove 5 & 6 items"
+				"Remove( 5, -1 ) -> remove 4 & 5 items"
+				"Remove( 5, 10 ) -> remove 5..15 items"
+				"Remove( 5, -10 ), Remove( 5, -5 ) -> remove 0..5 items")] 
+	HRESULT PlaylistRemoveByIndex( [in] int _nIndex, [in] int _nExtraRemove );
+
+	// PlaylistReorder( 5, 1 ) -> 123456 -> 123465
+	// PlaylistReorder( 5, -1 ) -> 123456 -> 123546
+	// PlaylistReorder( 5, -10 ) -> 123456 -> 512346
+	// PlaylistReorder( 5, 10 ) -> 12345678 -> 12346785
+	[helpstring("Change order of files in playlist"
+				"PlaylistReorder( 5, 1 ) -> 123456 -> 123465"
+				"PlaylistReorder( 5, -1 ) -> 123456 -> 123546"
+				"PlaylistReorder( 5, -10 ) -> 123456 -> 512346"
+				"PlaylistReorder( 5, 10 ) -> 12345678 -> 12346785")] 
+	HRESULT PlaylistReorder( [in] int _nIndex, [in] int _nIndexAdd );
+
+	// Switch to specified file
+	// Note: The _dblPos is related to In point
+	// PlaylistPosSet( 0, 10.0 ) -> switch to first file start at 10th sec (after In point)
+	// PlaylistPosSet( 5, 10.0 ) -> switch to fifth file start at 10th sec (after In point)
+	// PlaylistPosSet( -1, 25.0 ) -> switch to 25th sec in list (number of file culc from duration)
+	[helpstring("Set position to specifed file or time in playlist"
+				"Note: The position value is related to In point"
+				"PlaylistPosSet( 0, 10.0 ) -> set position to 10th sec after In point of first file"
+				"PlaylistPosSet( 5, 10.0 ) -> set position to 10th sec after In point of fifth file"
+				"PlaylistPosSet( -1, 25.0 ) -> set position to 25th sec of playlist(number of file is calculated automatically according to file durations)")] 
+	HRESULT PlaylistPosSet( [in] int _nIndex, [in] double _dblFileOrListTime, [in] double _dblPreroll );
+
+	[helpstring("Return current file index, file play time and playlist time (offset from start)")] 
+	HRESULT PlaylistPosGet( [out] int* _pnIndex, [out] int* _pnNextIndex, [out] double* _pdblFileTime, [out] double* _pdblListTime );
+
+	[helpstring("Set background for playlist.")] 
+	HRESULT PlaylistBackgroundSet( [in] IUnknown* _pExternOrRef, [in] BSTR _bsPath, [in] BSTR _bsParam, [out] IMItem** _ppPlaylistItem );
+
+	[helpstring("Get background of playlist.")] 
+	HRESULT PlaylistBackgroundGet( [out] BSTR* _pbsPath, [out] IMItem** _ppPlaylistItem );
+
+	[helpstring("Get file in playlist by time offset from start, return file, index, and position in file")] 
+	HRESULT PlaylistGetByOffset( [in] double _dblTimeOffset, [out] int* _pnIndex, [out] double* _pdblFileTime, [out] BSTR* _pbsPath, [out] IMItem** _ppPlaylistItem );
+// 
+// 	[helpstring("Get file in playlist by time, return file, index, and time from file start (not positions, as breaks may occurs)")] 
+// 	HRESULT PlaylistGetByTime( [in] M_DATETIME* _pTime, [out] int* _pnIndex, [out] double* _dblTimeFromStart, [out] BSTR* _pbsPath, [out] IMItem** _ppPlaylistItem );
+};
+
+[
+		object,
+		uuid(4F366177-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMBreaks Interface - implemented by MFile / MPlaylist object"),
+		pointer_default(unique)
+]
+interface IMBreaks : IUnknown
+{	
+//	Break playback and play specified file/playlist/live object, after file reach the end, resume playback of interrupted file.
+// 	[helpstring("Break playback and play specified file/playlist/live object, and, after file reach the end, resume playback of interrupted file."
+// 		"This command NOT AFFECT on breaks list, used just for interrupt playback")] 
+// 	HRESULT BreaksInstantPlay( [in] BSTR _bsPath, [in] BSTR _bsParam, [in,out] IMItem** _ppBreakItem );
+
+	// Return the number of breaks in playlist and total breaks duration (in seconds)
+	[helpstring("Return the number of breaks for file/playlist and total breaks duration (in seconds)")] 
+	HRESULT BreaksGetCount( [out] int* _pnCount, [out] double* _pdblTotalDuration );
+
+	// Return the file name and MFile interface by break index
+	[helpstring("Return the file name and IMFile interface (if applicable) by break index")] 
+	HRESULT BreaksGetByIndex( [in] int _nIndex, [out] double* _pdblBreakTime, [out] BSTR* _pbsPath, [out] IMItem** _ppBreakItem );
+
+	// Add new break at specified time.
+	[helpstring("Add new break (file, playlist, live) at specified time.")] 
+	HRESULT BreaksAdd( [in] double _dblTime, [in] IUnknown* _pExternOrRef, [in] BSTR _bsPath, [in] BSTR _bsParam, [out] IMItem** _ppBreakItem );
+
+	// Add new break at specified time.
+	[helpstring("Add new command at specified time.")] 
+	HRESULT BreaksCommandAdd( [in] double _dblTime, [in] BSTR _bsCommand, [in] BSTR _bsParam, [in] IUnknown* _pTargetObject, [out] IMItem** _ppBreakItem );
+
+	// Remove break by file reference
+	[helpstring("Remove break by file reference")] 
+	HRESULT BreaksRemove( [in] IMItem* _pBreakItem );
+
+	// Remove( 5, 0 ) -> remove 5 break
+	// Remove( 5, 1 ) -> remove 5 & 6 break
+	// Remove( 5, -1 ) -> remove 4 & 5 break
+	// Remove( 5, 10 ) -> remove 5..15 break
+	// Remove( 5, -10 ), Remove( 5, -5 ) -> remove 0..5 break
+	[helpstring("Remove multiple breaks by index")] 
+	HRESULT BreaksRemoveByIndex( [in] int _nIndex, [in] int _nExtraRemove );
+
+	[helpstring("Change time of break")] 
+	HRESULT BreaksTimeSet( [in] int _nIndex, [in] double _dblNewTime );
+};
+
+[
+		object,
+		uuid(4F366178-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMScheduler Interface, implemented by MPlaylist object"),
+		pointer_default(unique)
+]
+interface IMScheduler : IUnknown
+{	
+	[helpstring("Return the number of scheduled tasks")] 
+	HRESULT SchedulerGetCount( [out] int* _pnCount );
+
+	[helpstring("Return the task by it's index")] 
+	HRESULT SchedulerGetByIndex( [in] int _nIndex, [out] M_DATETIME* _pTime, [out] BSTR* _pbsCommand, [out] IMItem** _ppTask );
+
+	[helpstring("Return the task next to the specified time")] 
+	HRESULT SchedulerGetByTime( [in] M_DATETIME* _pCheckTime, [out] M_DATETIME* _pTaskTime, [out] BSTR* _pbsCommand, [out] IMItem** _ppTask );
+
+	[helpstring("Return the next task (use index for return the task next after next, etc."
+		"Note: If _bAllTask=1 then return all sheduled items (include break or playlist items with specified start time)")] 
+	HRESULT SchedulerGetNext( [in] BOOL _bAllTasks, [in] int _nIndex, [out] M_DATETIME* _pTaskTime, [out] BSTR* _pbsCommand, [out] IMItem** _ppTask );
+
+	// Add new break at specified time.
+	[helpstring("Add new command task (file, playlist, live or command) at specified time.\n"
+		"Unlike playlist command, by default _pSourceOrTargetObject is Source object e.g. for Writer::ObjectStart(pSource), for specify traget object, add 'target=true' into param list.")] 
+	HRESULT SchedulerCommandAdd( [in] M_DATETIME* _pTime, [in] BSTR _bsCommand, [in] BSTR _bsParam, [in] IUnknown* _pSourceOrTargetObject, [out] IMItem** _ppTask );
+
+	[helpstring("Add new scheduled file (file, playlist, live) at specified time. NOT IMPLEMNETED YET")] 
+	HRESULT SchedulerAdd( [in] M_DATETIME* _pTime, [in] IUnknown* _pExternOrRef, [in] BSTR _bsPath, [in] BSTR _bsParam, [out] IMItem** _ppTask );
+
+	[helpstring("Remove task")] 
+	HRESULT SchedulerRemove( [in] IMItem* _pTask );
+
+	// Remove( 5, 0 ) -> remove 5 task
+	// Remove( 5, 1 ) -> remove 5 & 6 task
+	// Remove( 5, -1 ) -> remove 4 & 5 task
+	// Remove( 5, 10 ) -> remove 5..15 task
+	// Remove( 5, -10 ), Remove( 5, -5 ) -> remove 0..5 task
+	[helpstring("Remove multiple task by index")] 
+	HRESULT SchedulerRemoveByIndex( [in] int _nIndex, [in] int _nExtraRemove );
+
+	[helpstring("Get information about task -> last time of execution and count of executions")] 
+	HRESULT SchedulerStatGet( [in] IMItem* _pTask, [out] M_DATETIME* _pTimeExecute, [out] int* _pnExecutionCount );
+};
+
+[
+		object,
+		uuid(4F366180-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMDevice Interface - implemented by live source and renderer sink"),
+		pointer_default(unique)
+]
+interface IMDevice : IUnknown
+{
+	// Devices (audio, video)
+	// Lines (video::line-in, video::line-out, audio::line-in, audio::line-out), 
+	// TV-Formats (video::tv-format)
+	// etc...
+	// Note: 'audio' and 'video' should be specified first 
+
+	[helpstring("Get devices or specified properties count")] 
+	HRESULT DeviceGetCount( [in] BOOL _bTypesEnum, [in] BSTR _bsType, [out] int* _pnCount );
+
+	[helpstring("Get device name or device properties by index")] 
+	HRESULT DeviceGetByIndex( [in] BOOL _bTypesEnum, [in] BSTR _bsType, [in] int _nIndex, [out] BSTR* _pbsNameOrType, [out] BSTR* _pbsXMLDesc );
+
+	[helpstring("Set working device or update device properties")] 
+	HRESULT DeviceSet( [in] BSTR _bsType, [in] BSTR _bsName, [in] BSTR _bsParam );
+
+	[helpstring("Get currently set device or device properties")] 
+	HRESULT DeviceGet( [in] BSTR _bsType, [out] BSTR* _pbsName, [out] BSTR* _pbsParam, [out] int* _pnIndex );
+
+	[helpstring("Show device properties")] 
+	HRESULT DeviceShowProps( [in] BSTR _bsType, [in] BSTR _bsPropsType, [in] LONGLONG _lWndHandle );
+};
+
+	
+
+[
+		object,
+		uuid(4F366190-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("IMPlugins Interface - implemented by obejcts"),
+		pointer_default(unique)
+]
+interface IMPlugins : IUnknown
+{	
+	[helpstring("Get plugins count")] 
+	HRESULT PluginsGetCount( [out] int* _pnCount );
+
+	[helpstring("Get plugin by it's index")] 
+	HRESULT PluginsGetByIndex( [in] int _nIndex, [out] IUnknown** _ppPlugin, [out] LONGLONG* _pllCallbackUserData );
+
+	[helpstring("Add plugin")] 
+	HRESULT PluginsAdd( [in] IUnknown* _pPlugin, [in] LONGLONG _llCallbackUserData );
+
+	[helpstring("Remove plugin (or remove all plugins in _pPlugin is NULL)")] 
+	HRESULT PluginsRemove( [in] IUnknown* _pPlugin );
+
+	[helpstring("Add plugin (for VB6 compatility)")] 
+	HRESULT PluginsAddVB6( [in] IUnknown* _pPlugin, [in] LONG _lCallbackUserData );
+
+	[helpstring("Get plugin by it's index (for VB6 compatility)")] 
+	HRESULT PluginsGetByIndexVB6( [in] int _nIndex, [out] IUnknown** _ppPlugin, [out] LONG* _pllCallbackUserData );
+
+	[helpstring("Reorder plugins")] 
+	HRESULT PluginsReorder( [in] IUnknown* _pPlugin, [in] int _nOrderChange );
+};
+
+
+[
+	object,
+	uuid(5F366195-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("The plugin's interface"),
+	pointer_default(unique)
+]
+interface IMPlugin : IUnknown
+{	
+	[helpstring("On media receive - Note: The plugin could not update frame and NOT return any pointer in _ppFrameRes")] 
+	HRESULT OnMediaReceive( 
+		[in] LONGLONG _llCallbackUserData,
+		[in] IUnknown* _pSender,
+		[in] IMFrame* _pFrame,
+		[out] IMFrame** _ppFrameRes );
+
+	[helpstring("End of media or sender disconnected")] 
+	HRESULT OnMediaEnd( 
+		[in] LONGLONG _llCallbackUserData,
+		[in] IUnknown* _pSender,				
+		[in] DWORD _dwFlags );
+
+	[helpstring("Media Flush")] 
+	HRESULT OnMediaFlush( 
+		[in] LONGLONG _llCallbackUserData,
+		[in] IUnknown* _pSender,				
+		[in] DWORD _dwFlags );
+};
+
+[
+	object,
+	uuid(082DA299-EEC4-4EF1-841E-3A280E7D0383),
+	helpstring("IMElements Interface"),
+	pointer_default(unique)
+]
+interface IMElement : IMAttributes
+{
+	[helpstring("Get element's parent")] 
+	HRESULT ElementParentGet( [out] IMElement** _ppParent );
+
+	[helpstring("Set element's parent")] 
+	HRESULT ElementParentSet( [in] IMElement* _pParent );
+
+	[helpstring("Smooth change attribute value (by specifed time)")] 
+	HRESULT ElementBoolSet( [in] BSTR _bsAttributeName, [in] BOOL _bValue, [in] double _dblTimeForChange );  
+
+	[helpstring("Smooth change attribute value (by specifed time)")] 
+	HRESULT ElementDoubleSet( [in] BSTR _bsAttributeName, [in] double _dblValue, [in] double _dblTimeForChange );  
+
+	[helpstring("Smooth change attribute value (by specifed time), only for some attributes, see attributes list for details")] 
+	HRESULT ElementStringSet( [in] BSTR _bsAttributeName, [in] BSTR _bsValue, [in] double _dblTimeForChange );  
+
+	[helpstring("Smooth change attribute value (by specifed time), only for some attributes, see attributes list for details")] 
+	HRESULT ElementMultipleSet( [in] BSTR _bsAttributesList, [in] double _dblTimeForChange );  
+
+	[helpstring("Change whole element (optionally with transition)")] 
+	HRESULT ElementSet( [in] BSTR _bsElementType, [in] BSTR _bsXMLDescription, [in] double _dblTimeForChange );
+
+	[helpstring("Change element media (optionally with transition)")]
+	HRESULT ElementMediaSet( [in] IUnknown* _pExternOrRef, 
+		[in] BSTR _bsPath, 
+		[in] BSTR _bsParam, 
+		[in] double _dblTimeForChange );
+
+	[helpstring("Return element type")] 
+	HRESULT ElementTypeGet( [out] BSTR* _pbsElementType );
+
+	[helpstring("Return element whole information")] 
+	HRESULT ElementGet( [out] BSTR* _pbsElementType, [out] BSTR* _pbsXMLDescription );
+
+	[helpstring("Reorder this element (have reason only for 2D case)")]
+	HRESULT ElementReorder( [in] int _nAddIndex );
+
+	[helpstring("Call special action for this element e.g. select it, highlight, select view, etc.")] 
+	HRESULT ElementInvoke( [in] BSTR _bsCommand, [in] BSTR _bsParam, [in] double _dblTimeForChange );
+
+	[helpstring("Remove this element")]
+	HRESULT ElementDetach( [in] double _dblTimeForChange );
+
+	[helpstring("Get scene element absolute pos (not relative to parent)")]
+	HRESULT ElementAbsolutePosGet( [out] double* _pdblXPos, [out] double* _pdblYPos, [out] double* _pdblWidth, [out] double* _pdblHeight );
+
+	[helpstring("Get scene element absolute pos (not relative to parent)")]
+	HRESULT ElementAbsolutePosSet( [in] double _dblXPos, [in] double _dblYPos, [in] double _dblWidth, [in] double _dblHeight );
+
+	[helpstring("Get information about this element")]
+	HRESULT ElementInfoGet( [in] BSTR _bsInfoType, [out] BSTR* _pbsDecription);
+};
+
+
+[
+	object,
+	uuid(082DA298-EEC4-4EF1-841E-3A280E7D0383),
+	helpstring("IMElements Interface"),
+	pointer_default(unique)
+]
+interface IMElements : IUnknown
+{
+	// This methods for 
+	[helpstring("Get scene elements count")] 
+	HRESULT ElementsGetCount( [out] int* _pnCount );
+
+	[helpstring("Get scene element")]
+	HRESULT ElementsGetByIndex( [in] int _nIndex, [out] IMElement** _ppChildElement );
+
+	[helpstring("Get scene element by id")]
+	HRESULT ElementsGetByID( [in] BSTR _bsElementID, [out] IMElement** _ppChildElement );
+	
+	[helpstring("Add new element, if such element existd, replace old (optionally with transition).")] 
+	HRESULT ElementsAdd( [in] BSTR _bsNewElementID, 
+		[in] BSTR _bsElementType, 
+		[in] BSTR _bsElementProps, 
+		[out] IMElement** _ppChildElement, 
+		[in] double _dblTimeForChange );
+
+	[helpstring("Add new media element, if such element existd, replace old (optionally with transition).")] 
+	HRESULT ElementsMediaAdd( [in] BSTR _bsNewElementID, 
+		[in] IUnknown* _pExternOrRef, 
+		[in] BSTR _bsPath, 
+		[in] BSTR _bsParam, 
+		[out] IMElement** _ppChildElement, 
+		[in] double _dblTimeForChange );
+};
+
+
+
+[
+	object,
+	uuid(082DA302-EEC4-4EF1-841E-3A280E7D0383),
+	helpstring("IMScene Interface"),
+	pointer_default(unique)
+]
+interface IMScenes : IUnknown
+{
+	[helpstring("Get scenes count.")] 
+	HRESULT ScenesGetCount( [out] int* _pnCount );
+
+	[helpstring("Get scenes by it's index")] 
+	HRESULT ScenesGetByIndex( [in] int _nIndex, [out] BSTR* _pbsSceneID, [out] IMElements** _ppScene );
+
+	[helpstring("Get scenes by name")] 
+	HRESULT ScenesGet( [in] BSTR _bsSceneID, [out] IMElements** _ppScene );
+
+	[helpstring("Add new scene")] 
+	HRESULT ScenesAdd( [in] BSTR _bsXMLDescOrPathName, [in,out] BSTR* _pbsSceneID, [out] IMElements** _ppScene );
+
+	[helpstring("Remove scene")] 
+	HRESULT ScenesRemove( [in] BSTR _bsSceneID );
+
+	[helpstring("Select active scene")] 
+	HRESULT ScenesActiveGet( [out] BSTR* _pbsSceneID, [out] int* _pnIndex, [out] IMElements** _ppScene );
+
+	[helpstring("Select active scene")] 
+	HRESULT ScenesActiveSet( [in] BSTR _bsSceneID, [in] BSTR _bsParameters );
+
+	[helpstring("Get element in active scene by screen position (relative: 0..1), e.g. by mouse click.")] 
+	HRESULT ScenesElementGetByPos( [in] double _dblPosX, [in] double _dblPosY, [in] BOOL _bHiddenReturn, [out] IMElement** _ppElement );
+
+// 	[helpstring("TEMPORARY - For moving, resising elements in active scene.")] 
+// 	HRESULT ScenesOnMouseMove( [in] double _dblPosX, [in] double _dblPosY, [in] eMMoveOption _eMove );
+};
+
+[
+	object,
+	uuid(69429619-9BC2-45D9-AFE9-F42F18C38CBF),
+	helpstring("IMStreams Interface"),
+	pointer_default(unique)
+]
+interface IMStreams : IUnknown
+{
+	[helpstring("Return the number of mixer streams")] 
+	HRESULT StreamsGetCount( [out] int* _pnCount );
+
+	[helpstring("Return MItem refrence by stream index")] 
+	HRESULT StreamsGetByIndex( [in] int _nIndex, [out] BSTR* _pbsStreamID, [out] IMItem** _ppStream );
+
+	[helpstring("Return MItem refrence by stream id")] 
+	HRESULT StreamsGet( [in] BSTR _bsStreamID, [out] int* _pnIndex, [out] IMItem** _ppStream );
+
+	[helpstring("Add new mixer (file, playlist, live) stream or replace existing with transition by _dblTimeForChange time")] 
+	HRESULT StreamsAdd( [in] BSTR _bsStreamID, [in] IUnknown* _pExternOrRef, [in] BSTR _bsPath, [in] BSTR _bsParam, [out] IMItem** _ppItem, [in] double _dblTimeForChange );
+
+	// Remove break by file reference
+	[helpstring("Remove stream by item reference")] 
+	HRESULT StreamsRemove( [in] IMItem* _pStream, [in] double _dblTimeForChange );
+
+	[helpstring("Remove multiple streams by index")] 
+	HRESULT StreamsRemoveByIndex( [in] int _nIndex, [in] int _nExtraRemove, [in] double _dblTimeForChange );
+
+	[helpstring("Change order of streams in mixer"
+				"StreamsReorder( 5, 1 ) -> 123456 -> 123465"
+				"StreamsReorder( 5, -1 ) -> 123456 -> 123546"
+				"StreamsReorder( 5, -10 ) -> 123456 -> 512346"
+				"StreamsReorder( 5, 10 ) -> 12345678 -> 12346785")] 
+	HRESULT StreamsReorder( [in] IMItem* _pStream, [in] int _nIndexAdd, [in] double _dblTimeForChange );
+
+	[helpstring("Set background for mixer.")] 
+	HRESULT StreamsBackgroundSet( [in] IUnknown* _pExternOrRef, [in] BSTR _bsPath, [in] BSTR _bsParam, [out] IMItem** _ppItemsItem, [in] double _dblTimeForChange );
+
+	[helpstring("Get background of mixer.")] 
+	HRESULT StreamsBackgroundGet( [out] BSTR* _pbsPath, [out] IMItem** _ppItemsItem );
+};
+
+[
+	object,
+	uuid(082DA400-EEC4-4EF1-841E-3A280E7D0383),
+	helpstring("IMWriter Interface"),
+	pointer_default(unique)
+]
+interface IMWriter : IUnknown
+{
+	[helpstring("Set target file name and encoding / capture parameters")] 
+	HRESULT WriterNameSet( [in] BSTR _bsName, [in] BSTR _bsProps );
+
+	[helpstring("Get target file name and encoding / capture parameters")] 
+	HRESULT WriterNameGet( [out] BSTR* _pbsName );
+
+	[helpstring("Pause writing (skip specified time or till ObjectStart)")] 
+	HRESULT WriterSkip( [in] double _dblSkipTime );
+};
+
+
+[
+	object,
+	uuid(7F366131-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMDeckControl Interface"),
+	pointer_default(unique)
+]
+interface IMDeckControl : IUnknown
+{
+	[helpstring("Open a connection to the deck.")] 
+	HRESULT DeckOpen([in] BOOL _bTimecodeIsDropFrame, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Close the connection to the deck.")] 
+	HRESULT DeckClose([in] BOOL _bStandbyOn);
+
+	[helpstring("Get the current state of the deck.")] 
+	HRESULT DeckGetCurrentState([out] eMBMDDeckControlMode *_pMode, [out] eMBMDDeckControlVTRControlState *_pVtrControlState, [out] long *_pFlags);		
+
+	[helpstring("Put the deck into standby mode.")] 
+	HRESULT DeckSetStandby([in] BOOL _bStandbyOn);
+
+	[helpstring("Send a custom command to the deck.")]
+	HRESULT DeckSendCommand([in] long  _lInBufferSize, [in] LONGLONG _pInBuffer, [out] long *_pOutDataSize, [in] LONGLONG _ppOutBuffer, [in] long outBufferSize, [out] eMBMDDeckControlError *_pError);
+	
+	[helpstring("Send a custom command to the deck.")]
+	HRESULT DeckSendCommand_I([in] long _lInBufferSize, [in,size_is(_lInBufferSize)] BYTE* _pInBuffer, [out] long *_pOutDataSize,  [out,size_is(,*_pOutDataSize)] BYTE** _ppOutBuffer, [in] long outBufferSize, [out] eMBMDDeckControlError *_pError);
+		
+	[helpstring("Send a play command to the deck.")]
+	HRESULT DeckPlay([out] eMBMDDeckControlError *_pError);
+	
+	[helpstring("Send a stop command to the deck.")]
+	HRESULT DeckStop([out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Toggle between play and stop mode.")]
+	HRESULT DeckTogglePlayStop([out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Send an eject command to the deck.")]
+	HRESULT DeckEject([out] eMBMDDeckControlError *_pError);
+	
+	[helpstring("Set the deck to go the specified timecode on the tape.")]
+	HRESULT DeckGoToTimecode([in] M_TIMECODE _timecode, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Send a fast forward command to the deck.")]
+	HRESULT DeckFastForward([in] BOOL _bViewTape, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Send a rewind command to the deck.")]
+	HRESULT DeckRewind([in] BOOL _bViewTape, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Send a step forward command to the deck.")]
+	HRESULT DeckStepForward([out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Send a step back command to the deck.")]
+	HRESULT DeckStepBack([out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Send a jog forward / reverse command to the deck.")]
+	HRESULT DeckJog([in] double _dblRate, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Send a shuttle forward / reverse command to the deck.")]
+	HRESULT DeckShuttle([in] double _dblRate, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Get a timecode from deck in string format.")]
+	HRESULT DeckGetTimecodeString([out] BSTR *_pCurrentTimeCode, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Get a timecode from deck in M_TIMECODE format.")]
+	HRESULT DeckGetTimecode([out] M_TIMECODE *_pCurrentTimeCode, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Set the preroll period.")]
+	HRESULT DeckSetPreroll([in] long _lPrerollSeconds);
+
+	[helpstring("Get the preroll period.")]
+	HRESULT DeckGetPreroll([out] long *_pPrerollSeconds);
+
+	[helpstring("Set the field accurate capture timecode offset.")]
+	HRESULT DeckSetCaptureOffset([in] long _lCaptureOffsetFields);
+
+	[helpstring("Current capture timecode offset.")]
+	HRESULT DeckGetCaptureOffset([out] long *_pCaptureOffsetFields);
+
+	[helpstring("Set the field accurate export timecode offset.")]
+	HRESULT DeckSetExportOffset([in] long _lExportOffsetFields);
+
+	[helpstring("Get the current setting of the field accurate export timecode offset.")]
+	HRESULT DeckGetExportOffset([out] long *_pExportOffsetFields);
+
+	[helpstring("Get the recommended delay fields of the current deck.")]
+	HRESULT DeckGetManualExportOffset([out] long *_pDeckManualExportOffsetFields);
+
+	[helpstring("Start an export to tape.")]
+	HRESULT DeckStartExport([in] long _lInTimecode, [in] long _lOutTimecode, [in] long _lExportModeOps, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Start a capture.")]
+	HRESULT DeckStartCapture([in] BOOL _bUseVITC, [in] long _lInTimecode, [in] long _lOutTimecode, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Get deck device ID.")]
+	HRESULT DeckGetDeviceID([out] long *_pDeviceId, [out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Stop current deck operation.")]
+	HRESULT DeckAbort(void);
+	
+	[helpstring("Send a record command to the deck.")]
+	HRESULT DeckCrashRecordStart([out] eMBMDDeckControlError *_pError);
+
+	[helpstring("Send a stop record command to the deck.")]
+	HRESULT DeckCrashRecordStop([out] eMBMDDeckControlError *_pError);
+};
+
+[
+	object,
+	uuid(082DA430-EEC4-4EF1-841E-3A280E7D0383),
+	helpstring("IMConfig Interface - for select parameters from pre-defined list"),
+	pointer_default(unique)
+]
+interface IMConfig : IMAttributes
+{
+	[helpstring("Get option types count (e.g. format, format::video, format::audio)")] 
+	HRESULT ConfigTypesGetCount( [out] int* _pnCount );
+
+	[helpstring("Get option type by index (e.g. format, format::video, format::audio)")] 
+	HRESULT ConfigTypesGetByIndex( [in] int _nIndex, [out] BSTR* _pbsSubType );
+
+	[helpstring("Get specified options (e.g. formats, codecs, devices, etc.) count (the first parameter is type returned via ConfigTypesGetByIndex()")] 
+	HRESULT ConfigGetCount( [in] BSTR _bsType, [out] int* _pnCount );
+
+	[helpstring("Get specified options (e.g. formats, codecs, devices, etc.) by index")] 
+	HRESULT ConfigGetByIndex( [in] BSTR _bsType, [in] int _nIndex, [out] BSTR* _pbsName );
+
+	[helpstring("Set specified options (e.g. formats, codecs, devices, etc.) and return interface for config properties."
+		"Note: The underlined option and types count could be changed. (need reenum via ConfigTypesGetCount() / ConfigTypesGetByIndex()")] 
+	HRESULT ConfigSet( [in] BSTR _bsType, [in] BSTR _bsName, [out] IMAttributes** _ppConfigProps );
+
+	[helpstring("Get specified options (e.g. formats, codecs, devices, etc.)")] 
+	HRESULT ConfigGet( [in] BSTR _bsType, [out] BSTR* _pbsName, [out] IMAttributes** _ppConfigProps );
+
+	[helpstring("Show specified type properties")] 
+	HRESULT ConfigShowProps( [in] BSTR _bsType, [in] BSTR _bsPropsType, [in] LONGLONG _lWndHandle );
+
+	[helpstring("Set all configuration properties via complex attributes line or XML")] 
+	HRESULT ConfigSetAll( [in] BSTR _bsAttributesLineOrXML );
+
+	[helpstring("Get all configuration properties as complex attributes line or XML")] 
+	HRESULT ConfigGetAll( [in] BOOL _bAttributesLine, [out] BSTR* _pbsAttributesLineOrXML );
+};
+
+// Common interface for object creation
+[
+	object,
+	uuid(4F367000-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFactory interface"),
+	pointer_default(unique)
+]
+interface IMFactory : IUnknown
+{
+	[helpstring("Create object by name (e.g. MPlaylist, MLive, MFile, etc.")] 
+	HRESULT ObjectCreate( [in] BSTR _bsName, [out] IUnknown** _ppObject ); 
+
+	[helpstring("Create MFile object")] 
+	HRESULT MFileCreate( [out] IMFile** _ppFile, [in] BSTR _bsProps ); 
+
+	[helpstring("Create MLive object")] 
+	HRESULT MLiveCreate( [out] IMDevice** _ppLive, [in] BSTR _bsProps ); 
+
+	[helpstring("Create MPlaylist object")] 
+	HRESULT MPlaylistCreate( [out] IMPlaylist** _ppPlaylist, [in] BSTR _bsProps ); 
+
+	[helpstring("Create MMixer object")] 
+	HRESULT MMixerCreate( [out] IMObject** _ppMixer, [in] BSTR _bsProps ); 
+
+	[helpstring("Create MComposer object")] 
+	HRESULT MComposerCreate( [out] IMObject** _ppComposer, [in] BSTR _bsProps );
+
+	[helpstring("Create MPreview object")] 
+	HRESULT MPreviewCreate( [out] IMPreview** _ppPreview, [in] BSTR _bsProps ); 
+
+	[helpstring("Create MRenderer object")] 
+	HRESULT MRendererCreate( [out] IMDevice** _ppRenderer, [in] BSTR _bsProps ); 
+
+	[helpstring("Create MProxy object")] 
+	HRESULT MProxyCreate( [out] IMReceiver** _ppProxy, [in] BSTR _bsProps ); 
+
+	[helpstring("Create MWriter object")] 
+	HRESULT MWriterCreate( [out] IMWriter** _ppWriter, [in] BSTR _bsProps ); 
+};
+
+[
+	object,
+	uuid(4F366025-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMSync - interface for synchronization object."),
+	pointer_default(unique)
+]
+interface IMSync : IUnknown
+{
+	[helpstring("Set sync object count")] 
+	HRESULT SyncSetCount( [in] int _nSyncCount ); 
+
+	[helpstring("Get sync object count")] 
+	HRESULT SyncGetCount( [out] int* _pnSyncCount ); 
+
+	[helpstring("Set sync object count")] 
+	HRESULT EnableBreaksControl( /*[in]*/ BOOL _bEnable ); 
+
+	[helpstring("Get sync object count")] 
+	HRESULT IsEnabledBreaksControl( /*[out]*/ BOOL* _pbEnabled ); 
+
+	[helpstring("Sync skip frames e.g. for sync writers")] 
+	HRESULT SkipFrames( /*[in]*/ BOOL _bSkip ); 
+};
+
+//////////////////////////////////////////////////////////////////////////
+// MPlatform pull mode interfaces
+
+[
+	object,
+	uuid(CD799F70-3FD4-4237-92D4-D187B588D999),
+	helpstring("IMSource interface"),
+	pointer_default(unique)
+]
+interface IMSource : IUnknown
+{
+	[helpstring("DEPRECATED use SourceFrameGetEx(with reader IDs) !!! Get video frame from source object (MLive, MFile, MPlaylist, MMixer)")] 
+	HRESULT SourceFrameGet( [in] REFERENCE_TIME _rtMaxWait, [out] IMFrame** _ppFrame, [in] int _nFlags );
+
+	[helpstring("Get video frame from source object (MLive, MFile, MPlaylist, MMixer) Note: after stop taken frames, use eFGT_Remove especially for eFGT_Sync mode")] 
+	HRESULT SourceFrameGetEx( [in,out] LONGLONG* _pllReaderID, [in] REFERENCE_TIME _rtMaxWait, [out] IMFrame** _ppFrame, [in] eFrameGetFlags _eGetType );
+};
+
+
+//////////////////////////////////////////////////////////////////////////
+// Internal interfaces
+
+[
+	object,
+	uuid(CD799F77-3FD4-4237-92D4-D187B588D999),
+	helpstring("IMSource_I interface"),
+	pointer_default(unique)
+]
+interface IMSource_I : IMSource
+{
+	HRESULT SourceInit( [in,out] LONGLONG* _plUserData );
+
+	HRESULT SourceClose( [in] LONGLONG _lUserData );
+
+	HRESULT SourceRefAdd( [in] DWORD _dwProcessID );
+
+	HRESULT SourceRefRemove( [in] DWORD _dwProcessID );
+
+	HRESULT SourceHaveRefs( [out] LONGLONG* _phWaitHandle );
+};
+
+// The replacement for IMSource_I interface
+[
+	object,
+	uuid(CD799F79-3FD4-4237-92D4-D187B588D999),
+	helpstring("IMFExternal interface"),
+	pointer_default(unique)
+]
+interface IMFExternal : IUnknown
+{
+	HRESULT ExternalPIDGet( [out] DWORD* _pdwProcessID );
+
+	HRESULT ExternalRefAdd( [in] DWORD _dwProcessID );
+
+	HRESULT ExternalRefRemove( [in] DWORD _dwProcessID );
+
+	HRESULT ExternalHaveRefs( [out] LONGLONG* _phWaitHandle );
+};
+
+[
+	object,
+	uuid(4F367777-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFrame interface"),
+	pointer_default(unique)
+]
+interface IMFrame_I : IMFrame
+{
+	HRESULT GetProcessID( [out] DWORD* _pdwProcessID );
+
+	HRESULT GetID( [out] LONGLONG* _plFrameID );
+
+	HRESULT AudioGet( [out] DWORD* _pcbAudio, [out,size_is(,*_pcbAudio)] BYTE** _ppbAudio );
+
+	HRESULT VideoGet( [out] DWORD* _pcbVideo, [out,size_is(,*_pcbVideo)] BYTE** _ppbVideo );
+
+	HRESULT VideoGetOffset( [out] LONG* _plOffset );
+
+	HRESULT AudioSet( [in] DWORD _cbAudio, [in, size_is(_cbAudio)] BYTE* _pbAudio );
+
+	HRESULT GetFrameProps( [out] M_TIME* _pTime, [out] M_AV_PROPS* _pProps, [out] DWORD* _pcbVideo, [out] DWORD* _pcbAudio );
+
+	// InProc ONLY !!!
+	HRESULT GetFramePropsAll( [out] M_TIME* _pTime, [out] M_AV_PROPS* _pProps, 
+		[out] DWORD* _pcbAudio, [out] BYTE** _ppbAudio,
+		[out] DWORD* _pcbVideo, [out] BYTE** _ppbVideo );
+
+	// Also for get ALL data
+	HRESULT ANCDataGet_I( [in] DWORD _dwDataFCC, [out] DWORD* _pcbANCData, [out,size_is(,*_pcbANCData)] BYTE** _ppbANCData ); 
+
+	// _nCopyType = 0 -> Copy only new, keep old
+	// _nCopyType = 1 -> Copy new, updated old
+	// _nCopyType = 2 -> Copy new, remove old
+	HRESULT ANCDataCopyFrom_I( [in] IMFrame_I* _pSource, [in] int _nCopyType ); 
+};
+
+[
+	object,
+	uuid(4F367778-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFrames_I interface"),
+	pointer_default(unique)
+]
+interface IMFrames_I : IMFrames
+{
+	HRESULT FramesCreate_I( [in] int _cbVideoSize, [in] int _cbAudioSize, [in] BSTR  _bsProps, [out] IMFrame_I** _ppFrame ); 
+
+	HRESULT FramesClone_I( [in] IMFrame* _pFrame, [out] IMFrame_I** _ppFrameClone, [in] eMFrameClone _eCloneType, [in] eMFCC _fccPixelFormat ); 
+
+	HRESULT FramesConvert_I( [in] IMFrame* _pFrameSrcL_F1, [in] IMFrame* _pFrameSrcR_F2, [in] M_VID_PROPS* _pVidPropsDest, [out] IMFrame** _ppFrameDest, [in] BSTR _bsPropsList ); 
+
+	HRESULT AllocBuffer( [in] DWORD _cbSize, [out] LONGLONG* _ppBuffer );
+
+	HRESULT ReleaseBuffer( [in] LONGLONG _pBuffer );
+};
+
+[
+		object,
+		uuid(4F367A40-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("Internal Interface"),
+		pointer_default(unique)
+]
+interface IMDevice_I : IUnknown
+{
+	// For skip in DS Enum
+	[helpstring("IsOwnDevice")] 
+	HRESULT IsOwnDevice( [in] BSTR _bsType, [in] BSTR _bsName, [in] BSTR _bsMoniker );
+
+	[helpstring("GetDevices")] 
+	HRESULT GetDevices( [out] BSTR* _pbsXMLDevices, [out] BSTR* _pbsXMLCurrent );
+	
+	[helpstring("GetDevices")] 
+	HRESULT SetDeviceOrProps( [in] BSTR _bsType, [in] BSTR _bsDeviceDesc, [out] BSTR* _pbsUpdatedDesc );
+	
+	[helpstring("DeviceShowProps")] 
+	HRESULT ShowDeviceProps( [in] BSTR _bsType, [in] BSTR _bsPropsType, [in] LONGLONG _lWndHandle );
+};
+
+[
+	object,
+	uuid(4F366A00-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("Internal interface"),
+	pointer_default(unique)
+]
+interface IMObject_I : IUnknown
+{
+	HRESULT Init( [in] IUnknown* _pReceiverOrSender );
+
+	HRESULT Close();
+
+	HRESULT SetInterface( [in] IUnknown* _pReceiverOrSender, [in] BOOL _bNoEOS );
+
+	HRESULT GetMediaProps( [out] M_VID_PROPS* _pVidProps, [out] M_AUD_PROPS* _pAudProps );
+
+	HRESULT GetState( [out] eMState* _peState, [out] IUnknown** _ppReceiverOrSender );
+
+	HRESULT GetInternalInterface( [in] BSTR _bsType, [out] IUnknown** _ppObject );
+};
+
+
+
+// IMSender_I
+[
+		object,
+		uuid(4F367A05-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("Internal interface"),
+		pointer_default(unique)
+]
+interface IMSender_I : IUnknown
+{
+	[helpstring("Add receiver")] 
+	HRESULT SenderChannelAdd( [in] IUnknown* _pReceiver, [in] BSTR _bsChannelID, [in] BSTR _bsXMLParam, [out] BOOL* _pbSenderRunning );
+
+	[helpstring("Remove receiver")] 
+	HRESULT SenderChannelRemove( [in] BSTR _bsChannelID );
+
+	// For sender enumerate
+	[helpstring("Get number of connected receivers")] 
+	HRESULT SenderChannelGetCount( [out] int* _pnCount );
+
+	[helpstring("Get receiver information by it's index")] 
+	HRESULT SenderChannelGetByIndex( [in] int _nIndex, [out] BSTR* _pbsChannelID, [out] BSTR* _pbsXMLParam );
+
+	[helpstring("SenderGetName")] 
+	HRESULT SenderGetName( [out] BSTR* _pbsName );
+
+	[helpstring("SenderGetMediaProps")] 
+	HRESULT SenderGetMediaProps( [out] M_VID_PROPS* _pVidProps, [out] M_AUD_PROPS* _pAudProps );
+
+	[helpstring("SenderCallbackAdd")] 
+	HRESULT SenderCallbackAdd( [in] IUnknown* _pCallback, [in] LONGLONG _llCallbackUserData );
+
+	[helpstring("SenderCallbackRemove")] 
+	HRESULT SenderCallbackRemove( [in] IUnknown* _pCallback );
+};
+
+
+
+[
+		object,
+		uuid(4F367A10-473F-4ad5-A5C2-428FE0C8E03E),
+		helpstring("Internal interface"),
+		pointer_default(unique)
+]
+interface IMReceiver_I : IUnknown
+{
+	// Methods called from receiver
+	[helpstring("Receive media."
+				"Note: this call is sync, to break call, use MediaFlush() call")] 
+	HRESULT MediaReceive( 
+		[in] BSTR _bsChannelID,					// Channel ID 
+		[in] IUnknown* _pSender,				// One channel may have several senders (e.g. during transition), can be NULL 
+		[in] IMFrame_I* _pFrame );
+
+	[helpstring("End of media or sender disconnected")] 
+	HRESULT MediaEnd( 
+		[in] BSTR _bsChannelID,					// Channel ID 
+		[in] IUnknown* _pSender,			
+		[in] DWORD _dwFlags );
+
+	[helpstring("Use it to break MediaReceive call wait")] 
+	HRESULT MediaFlush( 
+		[in] BSTR _bsChannelID,					// Channel ID 
+		[in] IUnknown* _pSender,
+		[in] DWORD _dwFlags );
+};
+
+
+[
+	object,
+	uuid(CD799F87-3FD4-4237-92D4-D187B588D999),
+	helpstring("IMFReceiver interface"),
+	pointer_default(unique)
+]
+interface IMFReceiver : IUnknown
+{
+	[helpstring("Put frame to destination object")] 
+	HRESULT ReceiverFramePut( [in] IMFFrame* _pFrame, [in] REFERENCE_TIME _rtMaxWait, [in] BSTR _bsHints );
+};
+
+[
+	object,
+	uuid(CD799F88-3FD4-4237-92D4-D187B588D999),
+	helpstring("IMFReceiver interface"),
+	pointer_default(unique)
+]
+interface IMFReceiverVB6 : IUnknown
+{
+	[helpstring("Put frame to destination object")] 
+	HRESULT ReceiverFramePutVB6( [in] IMFFrame* _pFrame, [in] int _nMaxWaitMsec, [in] BSTR _bsHints );
+};
+
+[
+	object,
+	uuid(10DB4AB7-89AF-4CD2-90A4-FB91B32DB3E0),
+	helpstring("IMFSink Interface"),
+	pointer_default(unique)
+]
+interface IMFSink : IMFReceiver
+{
+	[helpstring("Initialize sink object (after this call accessed for enumeration) Parameters: rate_control=input/default/output")] 
+	HRESULT SinkInit( [in] BSTR _bsSinkName, [in] BSTR _bsVirtualSourceName, [in] BSTR _bsProps );
+
+	[helpstring("Close sink object")] 
+	HRESULT SinkClose();
+};
+
+//////////////////////////////////////////////////////////////////////////
+// MFPipe impl (beta version)
+// 
+
+[
+	object,
+	uuid(04FCCF24-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFPipe : IUnknown
+{
+	// Info method
+	[helpstring("")]
+	HRESULT PipeInfoGet( [out] BSTR* pbsPipeName, [in] BSTR bsChannel, [out] MF_PIPE_INFO* pPipeInfo );
+
+	[helpstring("")]
+	HRESULT PipeConnectedGetByIndex( [in] int nIndex, [out] IMFPipe** ppPipe );
+
+	// Create/Open methods
+	[helpstring("")]
+	HRESULT PipeCreate( [in] BSTR bsPipeName, [in] BSTR bsHints );
+
+	[helpstring("")]
+	HRESULT PipeOpen( [in] BSTR bsPipeName, [in] int nMaxBuffers, [in] BSTR bsHints );
+
+	[helpstring("")]
+	HRESULT PipeOpenDirect( [in] IMFPipe* pSourcePipeObj, [in] int nMaxBuffers, [in] BSTR bsHints );
+
+	// Data stream (pipe)
+// 	[helpstring("Write data to stream")] 
+// 	HRESULT PipeWrite( [in] BSTR bsChannel, [in] LONG cbDataWrite, [in] LONGLONG lpDataWrite, [in] REFERENCE_TIME rtMaxWait, [out] LONG* pcbDataWritten, [in] BSTR bsHints );
+// 
+// 	[helpstring("Read and remove data from stream")] 
+// 	HRESULT PipeRead( [in] BSTR bsChannel, [in] LONG cbDataRead, [in] LONGLONG lpDataRead, [in] REFERENCE_TIME rtMaxWait, [out] LONG* pcbDataRead, [in] BSTR bsHints );
+// 
+// 	[helpstring("Read data from stream (do not remove)")] 
+// 	HRESULT PipePeek( [in] BSTR bsChannel, [in] LONGLONG llPeekPos, [in] LONG cbDataRead, [in] LONGLONG lpDataRead, [in] REFERENCE_TIME rtMaxWait, [out] LONG* pcbDataRead, [in] BSTR bsHints );
+
+	// Objects (push/pull mode, buffers, rate control etc.)
+	[helpstring("")] 
+	HRESULT PipePut( [in] BSTR bsChannel, [in] IUnknown* pMFrame, [in] REFERENCE_TIME rtMaxWait, [in] BSTR bsHints );
+
+	[helpstring("")] 
+	HRESULT PipeGet( [in] BSTR bsChannel, [out] IUnknown** ppMFrame, [in] REFERENCE_TIME rtMaxWait, [in] BSTR bsHints );
+
+	// Messages 
+	[helpstring("")] 
+	HRESULT PipeMessagePut( // Channel
+							[in] BSTR bsChannel,
+							//Event name
+							[in] BSTR bsEventName, 
+							//Event param
+							[in] BSTR bsEventParam,
+							//Object 
+							[in] IUnknown* pEventObject,
+							// Wait time
+							[in] REFERENCE_TIME rtMaxWait );
+
+	[helpstring("")] 
+	HRESULT PipeMessageGet(  // Channel
+							[in] BSTR bsChannel,
+							//Event name
+							[out] BSTR* pbsEventName, 
+							//Event param
+							[out] BSTR* pbsEventParam,
+							//Object 
+							[out] IUnknown** ppEventObject,
+							// Wait time
+							[in] REFERENCE_TIME rtMaxWait );
+
+	[helpstring("")] 
+	HRESULT PipeFlush( [in] BSTR bsChannel, [in] eMFFlashFlags _eFlashFlags );
+	
+
+	[helpstring("")]
+	HRESULT PipeClose();
+};
+
+[
+	object,
+	uuid(04FCCF22-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFPipes : IUnknown
+{
+	[helpstring("")]
+	HRESULT PipesGetCount( [in] BSTR bsProtocol, [out] int* _pnCount );
+
+	[helpstring("")]
+	HRESULT PipesGetByIndex( [in] BSTR bsProtocol, [in] int nIndex, [out] BSTR* _pbsPipeName, [out] IMFPipe** _ppPipeObj );
+
+	[helpstring("")]
+	HRESULT PipesGetByID( [in] BSTR bsPipeName, [out] IMFPipe** _ppPipeObj );
+};
+
+[
+	object,
+	uuid(04FCCF23-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFPipe_Source : IMFPipe
+{
+	[helpstring("")] 
+	HRESULT PipeReceiverAdd([out] IMFPipe** ppReader, [in] int nMaxBuffers, [in] BOOL bBlockMode, [in] BSTR bsHints );
+};
+
+
+// [
+// 	object,
+// 	uuid(04FCCF64-887B-4AEB-B30C-408E98E6B397),
+// 	pointer_default(unique)
+// ]
+// interface IMFSync : IUnknown
+// {
+// 	[helpstring("")]
+// 	HRESULT SyncLockRead( [in] REFERENCE_TIME _rtWaitForLock, [out] int* _pnLocked );
+// 
+// 	[helpstring("")]
+// 	HRESULT SyncLockWrite( [in] REFERENCE_TIME _rtWaitForLock, [out] BOOL* _pbLocked );
+// 
+// 	[helpstring("")]
+// 	HRESULT SyncUnlockRead();
+// 
+// 	[helpstring("")]
+// 	HRESULT SyncUnlockWrite();
+// 
+// 	[helpstring("")]
+// 	HRESULT SyncManualSet( [in] BOOL _bSet );
+// 
+// 	[helpstring("")]
+// 	HRESULT SyncManualWait( [in] REFERENCE_TIME rtWait, [out] REFERENCE_TIME* _prtRealWait, [out] eMFWaitRes* _peWaitRes );
+// 
+// 	[helpstring("")]
+// 	HRESULT SyncAutoSet( [in] BOOL _bSet );
+// 
+// 	[helpstring("")]
+// 	HRESULT SyncAutoWait( [in] REFERENCE_TIME rtWait, [out] REFERENCE_TIME* _prtRealWait, [out] eMFWaitRes* _peWaitRes );
+// };
+
+cpp_quote("#ifndef MFPROPS_DEFINED")
+cpp_quote("#define MFPROPS_DEFINED")
+
+// Common interface for properties get/set
+[
+	object,
+	uuid(4F366720-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFProps common Interface for properties get/set)"),
+	pointer_default(unique)
+]
+interface IMFProps : IUnknown
+{
+	[helpstring("Set properties (the XML format supported).")] 
+	HRESULT PropsSet( [in] BSTR _bsPropName, [in] BSTR _bsPropValue ); 
+		
+	[helpstring("Get properties (the XML format supported).")] 
+	HRESULT PropsGet( [in] BSTR _bsPropName, [out] BSTR* _pbsPropValue ); 
+
+	[helpstring("Get properties count")] 
+	HRESULT PropsGetCount( [in] BSTR _bsNodeName, [out] int* _pnCount ); 
+
+	[helpstring("Get property by it's index")] 
+	HRESULT PropsGetByIndex( [in] BSTR _bsNodeName, [in] int _nIndex, [out] BSTR* _pbsPropName, [out] BSTR* _pbsPropValue, [out] BOOL* _pbNode ); 
+
+	[helpstring("Remove props")] 
+	HRESULT PropsRemove( [in] BSTR _bsPropName ); 
+
+	[helpstring("Get property information (e.g. type, option values, hlp string etc. - see details in eMInfoType)")] 
+	HRESULT PropsInfoGet( [in] BSTR _bsPropName, [in] eMInfoType _eType, [out] BSTR* _pbsInfo ); 
+
+	[helpstring("Get property fixed values(options) count")] 
+	HRESULT PropsOptionGetCount( [in] BSTR _bsPropName, [out] int* _pnOptionCount ); 
+
+	[helpstring("Get property fixed value(option) information")] 
+	HRESULT PropsOptionGetByIndex( [in] BSTR _bsPropName, [in] int _nOptionIdx, [out] BSTR* _pbsOptionValue, [out] BSTR* _pbsHelp ); 
+
+	[helpstring("Set property fixed value(option) by it's index")] 
+	HRESULT PropsOptionSetByIndex( [in] BSTR _bsPropName, [in] int _nOptionInx ); 
+
+	[helpstring("Get property fixed value(option) index and help")] 
+	HRESULT PropsOptionGet( [in] BSTR _bsPropName, [out] int* _pnOptionIdx, [out] BSTR* _pbsOptionValue, [out] BSTR* _pbsHelp );
+};
+
+cpp_quote("#endif // MFPROPS_DEFINED")
+
+[
+	object,
+	uuid(D4BA348C-2C10-47D8-923C-4B780683F39D),
+	helpstring("IMFBrowser Interface"),
+	pointer_default(unique)
+]
+interface IMFBrowser : IUnknown
+{
+	[helpstring("Load specified page into browser")]
+	HRESULT BrowserPageLoad([in] BSTR _bsFilenameOrUrl);
+	[helpstring("Directly display HTML content")]
+	HRESULT BrowserHtmlDisplay([in] BSTR _bsHTMLAsString );
+	[helpstring("Set CSS style for already load page or HTML content")]
+	HRESULT BrowserCSSSet([in] BSTR _bsCSSAsString);
+	[helpstring("Execute javascript in browser")]
+	HRESULT BrowserJavascriptExecute([in] BSTR _bsJScriptAsString);	
+	[helpstring("Close current browser object")]
+	HRESULT BrowserClose();
+	[helpstring("Send browser command (go-back, go-forward, reload, stop loading)")]
+	HRESULT BrowserCommand( [in] eMFBrowserCommand _eCommand, [in] BSTR _bsParams );
+
+	[helpstring("Forward mouse click event (the coordinates is relative to video size)")]
+	HRESULT BrowserMouseClick([in] MF_MOUSE_EVENT* _pMouseProps, [in] eMFMouseButtons _eMouseButtons, [in] BOOL _bMouseUp, [in] int _nClickCount );
+	[helpstring("Forward mouse move event (the coordinates is relative to video size)")]
+	HRESULT BrowserMouseMove([in] MF_MOUSE_EVENT* _pMouseProps, [in] BOOL _bMouseLeave );
+	[helpstring("Forward mouse wheel event (the coordinates is relative to video size)")]
+	HRESULT BrowserMouseWheel([in] MF_MOUSE_EVENT* _pMouseProps, [in] int _nDeltaX, [in] int _nDeltaY );
+	[helpstring("Forward key event")]
+	HRESULT BrowserKeyEvent([in] MF_KEY_EVENT* _pKeyEvent );
+};
+
+[
+	object,
+	uuid(4F364005-473F-4ad5-A5C2-428FE0C8E03E),
+	helpstring("IMFConfig interface - global settings for all objects"),
+	pointer_default(unique)
+]
+interface IMFConfig : IUnknown
+{
+	[helpstring("Save settings")]
+	HRESULT SaveSettings( [in] BSTR _bsKeyName, [in] BSTR _bsAttributesList );
+	[helpstring("Load settings")]
+	HRESULT LoadSettings( [in] BSTR _bsKeyName, [out] BSTR* _pbsAttributesList );
+};
+
+[
+	object,
+	uuid(B22982B5-E0D5-4977-847D-868F5F0BB90F),
+	helpstring("IMFProcess interface"),
+	pointer_default(unique)
+]
+interface IMFProcess : IUnknown
+{
+	[helpstring("Process frame ")] 
+	HRESULT ProcessFrame( [in] IMFFrame* _pFrameIn, [out] IMFFrame** _ppFrameOut, [out] int* _pnFramesRest, [in] BSTR _bsPropsList );
+};
+
+
+// Raw buffers alloctor (common for CPU, GPU frames, could be costom-implemeted and set via MFFactory::MFObjSet([alloc-type], pCustomAllocator );
+[
+	object,
+	uuid(04FBCB26-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFAllocator : IUnknown
+{
+	[helpstring("Allocate buffer with specified size, and return pointer to bufferMemory, _ppObject and _pllShareID (at least one from lpData or pObject should be set, share id required only for transfer buffers beween processes)")] 
+	HRESULT BufferAlloc( [in] eMFBufferFlags _eFlags, [in] DWORD _cbSize, [out] LONGLONG* _plpData, [out] IUnknown** _ppObject, [out] LONGLONG* _pllShareID );
+
+	[helpstring("Allocate buffer with specified size (used for GPU-buffers), and return pointer to bufferMemory, _ppObject and _pllShareID (at least one from lpData or pObject should be set, share id required only for transfer buffers beween processes)")] 
+	HRESULT BufferAllocByProps( [in] eMFBufferFlags _eFlags, [in] M_VID_PROPS* _pVidProps, [out] LONGLONG* _plpData, [out] IUnknown** _ppObject, [out] LONGLONG* _pllShareID );
+
+	[helpstring("Open previously allocated buffer by unqiue ShareID. Note: For opened buffers BufferFreeByPtr/Obj may be not required.")] 
+	HRESULT BufferOpen( [in] LONGLONG _llShareID, [out] DWORD* _pdwSize, [out] LONGLONG* _plpData, [out] IUnknown** _ppObject);
+
+	[helpstring("Free buffer by data ptr")] 
+	HRESULT BufferFreeByPtr( [in] LONGLONG _lpData );
+
+	[helpstring("Free buffer by object")] 
+	HRESULT BufferFreeByObj( [in] IUnknown* _pObject );
+};
+
+
+[
+	object,
+	uuid(04FBCF64-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFPacket : IUnknown
+{
+	[helpstring("Get info for specified packet.")] 
+	HRESULT PacketInfoGet( [out] M_PACKET_INFO* _pPacketInfo );
+
+	[helpstring("Update packet info (packet data NOT updated)")] 
+	HRESULT PacketInfoSet( [in] M_PACKET_INFO* _pPacketInfo );
+
+	[helpstring("Get stream info for specified packet.")] 
+	HRESULT PacketStreamInfoGet( [out] M_STREAM_INFO* _pStreamInfo );
+
+	[helpstring("Return packet times and flags (in 100 nsec units)")] 
+	HRESULT PacketTimeGet( [out] M_TIME* _pTime );
+
+	[helpstring("Append data to packet")] 
+	HRESULT PacketAppendData( [in] LONG cbData, [in] LONGLONG lpData );
+};
+
+[
+	object,
+	uuid(04FBCB24-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFBuffersAllocator : IUnknown
+{
+	[helpstring("Transfer buffer from external process to local process (if remote buffer from same process, the same buffer return)")] 
+	HRESULT MFBufferTransferIPC( [in] IUnknown* _pRemoteBuffer, [out] IMFBuffer** _ppLocalBuffer, [in] eMFTransferFlags _eFlags  );
+
+	[helpstring("Allocate buffer with specified size, and optinally copy memory.")] 
+	HRESULT MFBufferAlloc( [in] DWORD _cbSize, [in] LONGLONG _lpBuffer, [out] IMFBuffer** _ppBuffer, [in] eMFBufferFlags _eFlags);
+
+	[helpstring("Allocate and initialized packet with specified size, and optionally copy memory.")] 
+	HRESULT MFBufferAllocPacket( [in] M_STREAM_INFO* _pStreamInfo, [in] M_PACKET_INFO* _pPacketInfo, [out] IMFPacket** _ppPacket);
+};
+
+[
+	object,
+	uuid(04FB0624-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFCache : IUnknown
+{
+	[helpstring("Put to specified cache with key and keep time, use negative value for size in bytes and positive for items count")] 
+	HRESULT MFCachePut( [in] BSTR _bsCacheName, 
+		[in] LONGLONG _llKey, 
+		[in] IUnknown* _pCacheItem, 
+		[in] LONG _lItemSizeBytes, 
+		[in] REFERENCE_TIME _rtKeepTime, // < 0 keep max time
+		[in] LONGLONG _llMaxItemsCountOrSizeBytes ); // Below zero -> is item counts, above zero cache size in bytes, Zero -> use previous settimgs
+
+	[helpstring("Allocate buffer with specified size, and optinally copy memory")] 
+	HRESULT MFCacheTake( [in] BSTR _bsCacheName, [in] LONGLONG _llKey, [out] IUnknown** _ppObject );
+
+	[helpstring("Flush Allocate buffer with specified size, and optinally copy memory")] 
+	HRESULT MFCacheFlush( [in] BSTR _bsCacheName, [in] LONGLONG _llKey );
+};
+
+
+
+[
+	object,
+	uuid(04FBC164-877B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFSideData : IUnknown
+{
+	[helpstring("Get ANC Data by index")] 
+	HRESULT MFDataGetByIndex( [in] int _nIndex, [out] BSTR* _pbsDataID, [out] LONG* _pcbANCData, [out] LONGLONG* _ppbANCData ); 
+
+	[helpstring("Get ANC Data by four char code e.g. 'C608'")] 
+	HRESULT MFDataGet( [in] BSTR _bsDataID, [out] LONG* _pcbANCData, [out] LONGLONG* _ppbANCData ); 
+
+	[helpstring("Set ANC Data by four char code e.g. 'C608'")] 
+	HRESULT MFDataSet( [in] BSTR _bsDataID, [in] LONG _cbANCData, [in] LONGLONG _pbANCData ); 
+
+	[helpstring("Get attached object by index")] 
+	HRESULT MFObjGetByIndex( [in] int _nIndex, [out] BSTR* _pbsObjID, [out] IUnknown** _ppObj, [in] BOOL _bMakeFrameLocal ); 
+
+	[helpstring("Get attached object by ID")] 
+	HRESULT MFObjGet( [in] BSTR _bsObjID, [out] IUnknown** _ppObj, [in] BOOL _bMakeFrameLocal ); 
+
+	[helpstring("Set attached object by ID")] 
+	HRESULT MFObjSet( [in] BSTR _bsObjID, [in] IUnknown* _pObj ); 
+
+	[helpstring("Get string by index")] 
+	HRESULT MFStrGetByIndex( [in] int _nIndex, [out] BSTR* _pbsStrID, [out] BSTR* _pbsString ); 
+
+	[helpstring("Get string object by ID")] 
+	HRESULT MFStrGet( [in] BSTR _bsStrID, [out] BSTR* _pbsString ); 
+
+	[helpstring("Set string object by ID")] 
+	HRESULT MFStrSet( [in] BSTR _bsStrID, [in] BSTR _bsString ); 
+};
+
+/////////////////////////////////////////////////////////////////////////////
+// Common MFObject interface (used also for plugins callback e.g. HTML overlay)
+
+[
+	object,
+	uuid(04FCCF26-887B-4AEB-B30C-408E98E6B397),
+	pointer_default(unique)
+]
+interface IMFObject : IUnknown
+{
+	[helpstring("Return state of specifed object and optionally some extra info (like path to file, device name etc.)")] 
+	HRESULT MFStateGet( [out] eMState* _peState, [out] BSTR* _pbsExtraInfo );
+
+	[helpstring("Set callback (for C++ code, for other languages use events.), for switch sync/unsync callback use on_event.sync, on_frame.sync")] 
+	HRESULT MFCallbackSet( [in] IMCallback* _pCallback, [in] LONGLONG _llCallbackUserData );
+
+	[helpstring("Set callback function (for C++ code, for other languages use events.), for switch sync/unsync callback use on_event.sync, on_frame.sync"
+		"The function pointer is PFOnFrame and PFOnEvent - see above")] 
+	HRESULT MFCallbackSetFunc( [in] LONGLONG _lpPFOnEvent, [in] LONGLONG _lpPFOnFrame, [in] LONGLONG _llCallbackUserData );
+
+	[helpstring("Object get internal component interface - work only for MFLive/MFRenderer IF device_sharing DISABLED (DirectShow/Decklink)")] 
+	HRESULT MFInternalGet( [in] BSTR _bsType, [out] IUnknown** _ppObject );
+
+	[helpstring("Common method for close object - can be used for close any object e.g. instead ReaderClose, DeviceClose, SpltterClose etc.")] 
+	HRESULT MFClose();
+};
+
+//////////////////////////////////////////////////////////////////////////
+// Internal interfaces
+
+[
+	object,
+	uuid(52DB5EBD-1414-47F8-9AB8-50C35A4D67FE),
+	pointer_default(unique)
+]
+interface IMDelay : IUnknown
+{
+	HRESULT Init();
+	HRESULT IsInit();
+	HRESULT Available([out] REFERENCE_TIME* _prtStart, [out] REFERENCE_TIME* _prtStop);
+	HRESULT Close();
+	HRESULT GetFrameForPos([in] REFERENCE_TIME _rtPos, [in] int _nNextOrPrevFrame, [out] IUnknown** _ppMFFrame );
+};
+
+
+[
+	object,
+	uuid(9FDA39AE-4090-43C8-A919-3A01CBF51EC3),
+	helpstring("IMSourceDS Interface"),
+	pointer_default(unique)
+]
+interface IMSourceDS : IUnknown
+{
+	[helpstring("Connect to sender")] 
+	HRESULT ConnectToSenderPtr( [in] IUnknown* _pSender, [in] BSTR _bsChannelID, [in] BSTR _bsProps );
+
+	[helpstring("Connect to sender")] 
+	HRESULT ConnectToSender( [in] BSTR _bsName, [in] BSTR _bsChannelID, [in] BSTR _bsProps );
+
+	[helpstring("Disconnect from sender")] 
+	HRESULT DisconnectFromSender();
+};
+
+[
+	object,
+	uuid(82503DDF-C56C-4AB9-BBC8-63F4F1A93CF2),
+	helpstring("IMSinkDS Interface"),
+	pointer_default(unique)
+]
+interface IMSinkDS : IUnknown
+{
+	[helpstring("SetProxy")] 
+	HRESULT SetProxy( [in] IUnknown* _pProxy, [in] IUnknown* _pCallbackSender, [in] BOOL _bAuto );
+};
+
+
+
+
+
+
+
+
