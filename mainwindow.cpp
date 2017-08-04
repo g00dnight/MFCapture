@@ -46,8 +46,8 @@ MainWindow::~MainWindow()
 {
     delete ui;
 
-    videoSources.clear();
     qDeleteAll(videoSources);
+    videoSources.clear();
 }
 
 void MainWindow::onVideoSourceClicked(bool checked)
