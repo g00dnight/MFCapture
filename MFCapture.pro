@@ -15,6 +15,7 @@ CONFIG += c++11
 
 INCLUDEPATH += include/ndi
 INCLUDEPATH += include/mformats
+INCLUDEPATH += streamerworkers
 
 osx {
     NDI_DIR = -L$$PWD/lib/ndi/osx/x64
@@ -37,11 +38,11 @@ windows {
 
 SOURCES +=  main.cpp\
             mainwindow.cpp \
-            livestreamerworker.cpp \
-            streamerworkerbase.cpp
+            streamerworkers/livestreamerworker.cpp \
+            streamerworkers/streamerworkerbase.cpp
 
 HEADERS  += mainwindow.h \
-            livestreamerworker.h \
-            streamerworkerbase.h
+            streamerworkers/livestreamerworker.h \
+            streamerworkers/streamerworkerbase.h
 
 FORMS    += mainwindow.ui
