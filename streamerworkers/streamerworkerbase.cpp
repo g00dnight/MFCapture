@@ -68,9 +68,11 @@ bool StreamerWorkerBase::startStreaming(QString streamName)
 
 void StreamerWorkerBase::stopStreaming()
 {
-    streaming = false;
-    wait();
-    NDIlib_send_destroy(ndiSender);
+    if (streaming) {
+        streaming = false;
+        wait();
+        NDIlib_send_destroy(ndiSender);
+    }
 }
 
 void StreamerWorkerBase::streamFrame(CComPtr<IMFFrame> mfFrame)
