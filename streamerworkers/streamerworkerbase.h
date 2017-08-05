@@ -17,7 +17,7 @@ public:
     StreamerWorkerBase(CComPtr<IMFDevice> &mfInstance);
     virtual ~StreamerWorkerBase();
 
-    virtual void startStreaming(QString streamName);
+    virtual bool startStreaming(QString streamName);
     virtual void stopStreaming();
 
 protected:

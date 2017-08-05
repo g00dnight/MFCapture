@@ -12,14 +12,14 @@ LiveStreamerWorker::LiveStreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice>& mf
 {
 }
 
-void LiveStreamerWorker::startStreaming(QString streamName)
+bool LiveStreamerWorker::startStreaming(QString streamName)
 {
     HRESULT hr = mfInstance->DeviceSet(eMFDT_Video, mfDeviceIndex, CComBSTR(L""));
     if (FAILED(hr)) {
         qCritical() << Q_FUNC_INFO << "DeviceSet FAILED";
-        return;
+        return false;
     }
-    StreamerWorkerBase::startStreaming(streamName);
+    return StreamerWorkerBase::startStreaming(streamName);
 }
 
 void LiveStreamerWorker::stopStreaming()

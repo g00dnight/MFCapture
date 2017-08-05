@@ -9,7 +9,7 @@ class LiveStreamerWorker : public StreamerWorkerBase
 public:
     LiveStreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice> &mfInstance);
 
-    virtual void startStreaming(QString streamName);
+    virtual bool startStreaming(QString streamName);
     virtual void stopStreaming();
 
 protected:

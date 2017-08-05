@@ -12,11 +12,15 @@ StreamerWorkerBase::~StreamerWorkerBase()
     stopStreaming();
 }
 
-void StreamerWorkerBase::startStreaming(QString streamName)
+bool StreamerWorkerBase::startStreaming(QString streamName)
 {
-    this->streamName =streamName;
+    if (streaming)
+        return false;
+
+    this->streamName = streamName;
     streaming = true;
     start();
+    return true;
 }
 
 void StreamerWorkerBase::stopStreaming()

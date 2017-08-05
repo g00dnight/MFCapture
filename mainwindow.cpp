@@ -53,8 +53,7 @@ void MainWindow::onVideoSourceClicked(bool checked)
     QPushButton* clickedButton = (QPushButton*)sender();
     if (videoSources.count(clickedButton)) {
         if (checked) {
-            // capture
-            videoSources[clickedButton]->startStreaming(clickedButton->text());
+            clickedButton->setChecked(videoSources[clickedButton]->startStreaming(clickedButton->text()));
         } else
             videoSources[clickedButton]->stopStreaming();
 
