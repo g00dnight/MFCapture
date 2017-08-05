@@ -6,20 +6,20 @@
 #include <windows.h>
 #include <QDebug>
 
-LiveStreamerWorker::LiveStreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice>& mfInstance, QString streamName)
-    : StreamerWorkerBase(mfInstance, streamName)
+LiveStreamerWorker::LiveStreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice>& mfInstance)
+    : StreamerWorkerBase(mfInstance)
     , mfDeviceIndex(mfDeviceIndex)
 {
 }
 
-void LiveStreamerWorker::startStreaming()
+void LiveStreamerWorker::startStreaming(QString streamName)
 {
     HRESULT hr = mfInstance->DeviceSet(eMFDT_Video, mfDeviceIndex, CComBSTR(L""));
     if (FAILED(hr)) {
         qCritical() << Q_FUNC_INFO << "DeviceSet FAILED";
         return;
     }
-    StreamerWorkerBase::startStreaming();
+    StreamerWorkerBase::startStreaming(streamName);
 }
 
 void LiveStreamerWorker::stopStreaming()

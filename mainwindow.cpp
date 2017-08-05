@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
             QPushButton* videoSourceButton = new QPushButton(buttonName);
             videoSourceButton->setCheckable(true);
             ui->videoSourcesLayout->addWidget(videoSourceButton);
-            videoSources[videoSourceButton] = new LiveStreamerWorker(i, mfInstance, videoSourceButton->text());
+            videoSources[videoSourceButton] = new LiveStreamerWorker(i, mfInstance);
         }        
         ::SysFreeString(devName);
     }
@@ -54,7 +54,7 @@ void MainWindow::onVideoSourceClicked(bool checked)
     if (videoSources.count(clickedButton)) {
         if (checked) {
             // capture
-            videoSources[clickedButton]->startStreaming();
+            videoSources[clickedButton]->startStreaming(clickedButton->text());
         } else
             videoSources[clickedButton]->stopStreaming();
 

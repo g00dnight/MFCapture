@@ -14,10 +14,10 @@ class StreamerWorkerBase : public QThread
 {
     Q_OBJECT
 public:
-    StreamerWorkerBase(CComPtr<IMFDevice> &mfInstance, QString streamName);
+    StreamerWorkerBase(CComPtr<IMFDevice> &mfInstance);
     virtual ~StreamerWorkerBase();
 
-    virtual void startStreaming();
+    virtual void startStreaming(QString streamName);
     virtual void stopStreaming();
 
 protected:

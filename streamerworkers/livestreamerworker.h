@@ -7,9 +7,9 @@ class LiveStreamerWorker : public StreamerWorkerBase
 {
     Q_OBJECT
 public:
-    LiveStreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice> &mfInstance, QString streamName);
+    LiveStreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice> &mfInstance);
 
-    virtual void startStreaming();
+    virtual void startStreaming(QString streamName);
     virtual void stopStreaming();
 
 protected:

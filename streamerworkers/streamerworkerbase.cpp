@@ -1,8 +1,7 @@
 #include "streamerworkerbase.h"
 
-StreamerWorkerBase::StreamerWorkerBase(CComPtr<IMFDevice> &mfInstance, QString streamName)
+StreamerWorkerBase::StreamerWorkerBase(CComPtr<IMFDevice> &mfInstance)
     : mfInstance(mfInstance)
-    , streamName(streamName)
     , streaming(false)
 {
 
@@ -13,8 +12,9 @@ StreamerWorkerBase::~StreamerWorkerBase()
     stopStreaming();
 }
 
-void StreamerWorkerBase::startStreaming()
+void StreamerWorkerBase::startStreaming(QString streamName)
 {
+    this->streamName =streamName;
     streaming = true;
     start();
 }
