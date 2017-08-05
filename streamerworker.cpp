@@ -4,21 +4,12 @@
 
 #include <windows.h>
 #include <QDebug>
-// workaround for Qt5.9 bug: https://bugreports.qt.io/browse/QTBUG-56634
-#ifndef Q_MOC_RUN
-#include <atlbase.h>
-#endif
 
-StreamerWorker::StreamerWorker(int mfDeviceIndex)
+StreamerWorker::StreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice>& mfInstance)
     : mfDeviceIndex(mfDeviceIndex)
+    , mfInstance(mfInstance)
     , streaming(false)
 {
-    // Create MFLive instance
-    HRESULT hr = mfInstance.CoCreateInstance(__uuidof(MFLive));
-    if (FAILED(hr)) {
-        qCritical() << Q_FUNC_INFO << "mfLiveInstance.CoCreateInstance FAILED";
-        return;
-    }
 }
 
 StreamerWorker::~StreamerWorker()

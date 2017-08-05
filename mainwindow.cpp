@@ -31,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent) :
             QPushButton* videoSourceButton = new QPushButton(buttonName);
             videoSourceButton->setCheckable(true);
             ui->videoSourcesLayout->addWidget(videoSourceButton);
-            videoSources[videoSourceButton] = new StreamerWorker(i);
+            videoSources[videoSourceButton] = new StreamerWorker(i, mfInstance);
         }
 
         ::SysFreeString(devName);
