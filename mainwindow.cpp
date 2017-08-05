@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "livestreamerworker.h"
 
 #include <QScreen>
 #include <QtConcurrentRun>
@@ -30,11 +31,9 @@ MainWindow::MainWindow(QWidget *parent) :
             QPushButton* videoSourceButton = new QPushButton(buttonName);
             videoSourceButton->setCheckable(true);
             ui->videoSourcesLayout->addWidget(videoSourceButton);
-            videoSources[videoSourceButton] = new StreamerWorker(i, mfInstance, videoSourceButton->text());
-        }
-
+            videoSources[videoSourceButton] = new LiveStreamerWorker(i, mfInstance, videoSourceButton->text());
+        }        
         ::SysFreeString(devName);
-
     }
 
     foreach(QPushButton* videoSourceButton, videoSources.keys())

@@ -37,9 +37,11 @@ windows {
 
 SOURCES +=  main.cpp\
             mainwindow.cpp \
-            streamerworker.cpp
+            livestreamerworker.cpp \
+            streamerworkerbase.cpp
 
 HEADERS  += mainwindow.h \
-            streamerworker.h
+            livestreamerworker.h \
+            streamerworkerbase.h
 
 FORMS    += mainwindow.ui

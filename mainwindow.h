@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "streamerworker.h"
+#include "streamerworkerbase.h"
 #include "MFormats.h"
 
 #include <QMainWindow>
@@ -27,7 +27,7 @@ public slots:
 private:
     Ui::MainWindow *ui;
 
-    QMap<QPushButton*, StreamerWorker*> videoSources; // QPushButton -> device index in MFormats
+    QMap<QPushButton*, StreamerWorkerBase*> videoSources;
     CComPtr<IMFDevice> mfInstance;
 };
 

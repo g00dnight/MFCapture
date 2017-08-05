@@ -1,4 +1,4 @@
-#include "streamerworker.h"
+#include "livestreamerworker.h"
 
 #include "MFormats.h"
 #include "Processing.NDI.Lib.h"
@@ -6,34 +6,25 @@
 #include <windows.h>
 #include <QDebug>
 
-StreamerWorker::StreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice>& mfInstance, QString streamName)
-    : mfDeviceIndex(mfDeviceIndex)
-    , mfInstance(mfInstance)
-    , streamName(streamName)
-    , streaming(false)
+LiveStreamerWorker::LiveStreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice>& mfInstance, QString streamName)
+    : StreamerWorkerBase(mfInstance, streamName)
+    , mfDeviceIndex(mfDeviceIndex)
 {
 }
 
-StreamerWorker::~StreamerWorker()
-{
-    stopStreaming();
-}
-
-void StreamerWorker::startStreaming()
+void LiveStreamerWorker::startStreaming()
 {
     HRESULT hr = mfInstance->DeviceSet(eMFDT_Video, mfDeviceIndex, CComBSTR(L""));
     if (FAILED(hr)) {
         qCritical() << Q_FUNC_INFO << "DeviceSet FAILED";
         return;
     }
-    streaming = true;
-    start();
+    StreamerWorkerBase::startStreaming();
 }
 
-void StreamerWorker::stopStreaming()
+void LiveStreamerWorker::stopStreaming()
 {
-    streaming = false;
-    wait();
+    StreamerWorkerBase::stopStreaming();
     HRESULT hr = mfInstance->DeviceSet(eMFDT_Video, mfDeviceIndex, CComBSTR(L""));
     if (FAILED(hr)) {
         qCritical() << Q_FUNC_INFO << "DeviceSet FAILED";
@@ -42,7 +33,7 @@ void StreamerWorker::stopStreaming()
     mfInstance->DeviceClose();
 }
 
-void StreamerWorker::run()
+void LiveStreamerWorker::run()
 {
     // Create an NDI source that is clocked to the video.
     std::string streamNameStr = streamName.toStdString();
