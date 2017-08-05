@@ -28,7 +28,10 @@ private:
     Ui::MainWindow *ui;
 
     QMap<QPushButton*, StreamerWorkerBase*> videoSources;
+
     CComPtr<IMFDevice> mfInstance;
+    CComPtr<IMPreview> mfPreview;
+    CComQIPtr<IMFReceiver> mfReceiverPreview;
 };
 
 #endif // MAINWINDOW_H

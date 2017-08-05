@@ -1,12 +1,14 @@
 #include "streamerworkerbase.h"
 
 #include <QDebug>
+#include <QWidget>
 
 StreamerWorkerBase::StreamerWorkerBase(CComPtr<IMFDevice> &mfInstance)
     : mfInstance(mfInstance)
     , streaming(false)
+    , mfReceiverPreview(nullptr)
 {
-    frameInfo = {};
+    frameInfo = {};      
 }
 
 StreamerWorkerBase::~StreamerWorkerBase()
@@ -75,6 +77,12 @@ void StreamerWorkerBase::stopStreaming()
     }
 }
 
+void StreamerWorkerBase::setPreviewReceiver(CComQIPtr<IMFReceiver> mfReceiverPreview)
+{
+    QMutexLocker locker(&previewReceivermutex);
+    this->mfReceiverPreview = mfReceiverPreview;
+}
+
 void StreamerWorkerBase::streamFrame(CComPtr<IMFFrame> mfFrame)
 {
     mfFrame->MFAllGet(&frameInfo);
@@ -83,4 +91,8 @@ void StreamerWorkerBase::streamFrame(CComPtr<IMFFrame> mfFrame)
     ndiVideoFrame.line_stride_in_bytes = ndiVideoFrame.xres * 2;
     ndiVideoFrame.p_data = (uint8_t*)frameInfo.lpVideo;
     NDIlib_send_send_video(ndiSender, &ndiVideoFrame);
+
+    QMutexLocker locker(&previewReceivermutex);
+    if (mfReceiverPreview != nullptr)
+        mfReceiverPreview->ReceiverFramePut(mfFrame, -1, CComBSTR(L""));
 }

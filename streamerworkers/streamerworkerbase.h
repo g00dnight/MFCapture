@@ -10,6 +10,7 @@
 #endif
 #include <QThread>
 #include <atomic>
+#include <QMutex>
 
 class StreamerWorkerBase : public QThread
 {
@@ -21,16 +22,22 @@ public:
     virtual bool startStreaming(QString streamName);
     virtual void stopStreaming();
 
+    void setPreviewReceiver(CComQIPtr<IMFReceiver> mfReceiverPreview);
+
 protected:
     void streamFrame(CComPtr<IMFFrame> mfFrame);
 
     std::atomic_bool streaming;
 
     CComPtr<IMFDevice>& mfInstance;
-    MF_FRAME_INFO frameInfo;
+    MF_FRAME_INFO frameInfo;    
 
     NDIlib_send_instance_t ndiSender;
     NDIlib_video_frame_t ndiVideoFrame;
+
+private:
+    QMutex previewReceivermutex;
+    CComQIPtr<IMFReceiver> mfReceiverPreview;
 };
 
 #endif // STREAMERWORKERBASE_H

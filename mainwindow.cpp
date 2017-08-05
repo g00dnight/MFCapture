@@ -15,6 +15,27 @@ MainWindow::MainWindow(QWidget *parent) :
 
     HRESULT hr = mfInstance.CoCreateInstance(__uuidof(MFLive));
 
+    //Initialize preview
+    hr = mfPreview.CoCreateInstance(__uuidof(MFPreview));
+    if (FAILED(hr))
+    {
+        qCritical() << Q_FUNC_INFO << "ERROR: Can't create MFPreview instance";
+        return;
+    }
+    hr = mfPreview->PreviewWindowSet(CComBSTR(""), ui->previewLabel->winId());
+    if (FAILED(hr))
+    {
+        qCritical() << Q_FUNC_INFO << "PreviewWindowSet FAILED";
+        return;
+    }
+    hr = mfPreview->PreviewEnable(CComBSTR(L""), false, true);
+    if (FAILED(hr))
+    {
+        qCritical() << Q_FUNC_INFO << "PreviewEnable FAILED";
+        return;
+    }
+    mfReceiverPreview = CComQIPtr<IMFReceiver>(mfPreview);
+
     int deviceCount;
     hr = mfInstance->DeviceGetCount(eMFDT_Video, &deviceCount);
     if (FAILED(hr)) {
@@ -43,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent) :
     videoSources[videoFileButton] = new FileStreamerWorker(mfInstance);
 
     foreach(QPushButton* videoSourceButton, videoSources.keys())
-        connect(videoSourceButton, SIGNAL(clicked(bool)), this, SLOT(onVideoSourceClicked(bool)));
+        connect(videoSourceButton, SIGNAL(clicked(bool)), this, SLOT(onVideoSourceClicked(bool)));   
 }
 
 MainWindow::~MainWindow()
@@ -59,7 +80,12 @@ void MainWindow::onVideoSourceClicked(bool checked)
     QPushButton* clickedButton = (QPushButton*)sender();
     if (videoSources.count(clickedButton)) {
         if (checked) {
+            foreach (StreamerWorkerBase* streamerWorker, videoSources)
+                streamerWorker->setPreviewReceiver(nullptr);
+            videoSources[clickedButton]->setPreviewReceiver(mfReceiverPreview);
+
             clickedButton->setChecked(videoSources[clickedButton]->startStreaming(clickedButton->text()));
+
         } else
             videoSources[clickedButton]->stopStreaming();
 
