@@ -25,8 +25,6 @@ public slots:
     void onVideoSourceClicked(bool checked);
 
 private:
-    //void screenStreamer();
-
     Ui::MainWindow *ui;
 
     QMap<QPushButton*, StreamerWorker*> videoSources; // QPushButton -> device index in MFormats

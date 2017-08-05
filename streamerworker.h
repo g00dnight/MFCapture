@@ -14,7 +14,7 @@ class StreamerWorker : public QThread
 {
     Q_OBJECT
 public:
-    StreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice> &mfInstance);
+    StreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice> &mfInstance, QString streamName);
     virtual ~StreamerWorker();
 
     void startStreaming();
@@ -28,6 +28,7 @@ private:
     std::atomic_bool streaming;
 
     CComPtr<IMFDevice>& mfInstance;
+    QString streamName;
 };
 
 #endif // STREAMERWORKER_H
