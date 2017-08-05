@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "livestreamerworker.h"
+#include "filestreamerworker.h"
 
 #include <QScreen>
 #include <QtConcurrentRun>
@@ -35,6 +36,11 @@ MainWindow::MainWindow(QWidget *parent) :
         }        
         ::SysFreeString(devName);
     }
+
+    QPushButton* videoFileButton = new QPushButton("Video file");
+    videoFileButton->setCheckable(true);
+    ui->videoSourcesLayout->addWidget(videoFileButton);
+    videoSources[videoFileButton] = new FileStreamerWorker(mfInstance);
 
     foreach(QPushButton* videoSourceButton, videoSources.keys())
         connect(videoSourceButton, SIGNAL(clicked(bool)), this, SLOT(onVideoSourceClicked(bool)));

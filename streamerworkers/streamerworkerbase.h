@@ -2,6 +2,7 @@
 #define STREAMERWORKERBASE_H
 
 #include "MFormats.h"
+#include "Processing.NDI.Lib.h"
 
 // workaround for Qt5.9 bug: https://bugreports.qt.io/browse/QTBUG-56634
 #ifndef Q_MOC_RUN
@@ -21,10 +22,15 @@ public:
     virtual void stopStreaming();
 
 protected:
+    void streamFrame(CComPtr<IMFFrame> mfFrame);
+
     std::atomic_bool streaming;
 
     CComPtr<IMFDevice>& mfInstance;
-    QString streamName;
+    MF_FRAME_INFO frameInfo;
+
+    NDIlib_send_instance_t ndiSender;
+    NDIlib_video_frame_t ndiVideoFrame;
 };
 
 #endif // STREAMERWORKERBASE_H
