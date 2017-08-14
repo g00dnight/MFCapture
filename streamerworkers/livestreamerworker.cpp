@@ -13,7 +13,7 @@ LiveStreamerWorker::LiveStreamerWorker(int mfDeviceIndex, CComPtr<IMFDevice>& mf
 
 bool LiveStreamerWorker::startStreaming(QString streamName)
 {
-    HRESULT hr = mfInstance->DeviceSet(eMFDT_Video, mfDeviceIndex, CComBSTR(L""));
+    HRESULT hr = mfInstance->DeviceSet(eMFDT_ExtAudio, mfDeviceIndex, CComBSTR(L""));
     if (FAILED(hr)) {
         qCritical() << Q_FUNC_INFO << "DeviceSet FAILED";
         return false;
@@ -24,7 +24,7 @@ bool LiveStreamerWorker::startStreaming(QString streamName)
 void LiveStreamerWorker::stopStreaming()
 {
     StreamerWorkerBase::stopStreaming();
-    HRESULT hr = mfInstance->DeviceSet(eMFDT_Video, mfDeviceIndex, CComBSTR(L""));
+    HRESULT hr = mfInstance->DeviceSet(eMFDT_ExtAudio, mfDeviceIndex, CComBSTR(L""));
     if (FAILED(hr)) {
         qCritical() << Q_FUNC_INFO << "DeviceSet FAILED";
         return;
@@ -34,15 +34,17 @@ void LiveStreamerWorker::stopStreaming()
 
 void LiveStreamerWorker::run()
 {
-    M_AV_PROPS avProps = {};
+    // M_AV_PROPS avProps = {};
+
     CComQIPtr<IMFSource> mfSource(mfInstance);
     CComPtr<IMFFrame> mfFrame;
 
     while(streaming) {
         mfFrame = nullptr;
         //Get frames one by one
-        mfSource->SourceFrameConvertedGet(&avProps, -1, &mfFrame, CComBSTR(L""));
-        if (mfFrame)
-            streamFrame(mfFrame);
+        mfSource->SourceFrameGet(-1, &mfFrame, CComBSTR(L""));
+        qDebug() << Q_FUNC_INFO << mfFrame; // TMP
+//        if (mfFrame)
+//            streamFrame(mfFrame);
     }    
 }
